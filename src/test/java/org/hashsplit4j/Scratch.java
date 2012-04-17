@@ -17,10 +17,22 @@ public class Scratch {
     
     
     @Test
-    public void scratchTest() throws IOException {
-        Map<Long, byte[]> map1 = processFile("platypus.bmp");
-        Map<Long, byte[]> map2 = processFile("platypus-mod.bmp");
-        
+    public void bitmapTest() throws IOException {
+        Map<Long, byte[]> map1 = processFile("platypus.bmp", 218870);
+        Map<Long, byte[]> map2 = processFile("platypus-mod.bmp", 218870);
+        checkCommon( map1, map2, 80); 
+    }
+
+    @Test
+    public void wordDocTest() throws IOException {
+        Map<Long, byte[]> map1 = processFile("doc1.rtf", 57911);                
+        Map<Long, byte[]> map2 = processFile("doc2.rtf", 57914); // Just has a few extra bytes at start
+        checkCommon( map1, map2, 80); 
+    }
+    
+    
+    private void checkCommon(Map<Long, byte[]> map1, Map<Long, byte[]> map2, int minPercent) {
+        System.out.println("Check common blobs");
         // find out how many we have in common
         int common = 0;
         for( Long l : map1.keySet()) {
@@ -30,16 +42,17 @@ public class Scratch {
         }
         System.out.println("Common blobs: " + common);
         System.out.println("Total blobs: " + map1.size());
-        assertTrue( common * 100/map1.size() > 80 ); // check at least 80% is common
+        int pc = common * 100/map1.size();
+        assertTrue("Must be at least " + minPercent + "% in common. Is " + pc + "%",  pc > minPercent ); // check at least 80% is common
     }
     
-    public Map<Long,byte[]> processFile(String fname) throws IOException {
+    public Map<Long,byte[]> processFile(String fname, long size) throws IOException {
         InputStream in = Scratch.class.getResourceAsStream(fname);
         //InputStream in = Scratch.class.getResourceAsStream("test1.txt");
         MemoryHashStore store = new MemoryHashStore();
         Parser parser = new Parser();
         List<Long> megaCrcs = parser.parse(in, store);
-        assertEquals(218870, store.getTotalSize()); // check reconstituted size is same as the file
+        assertEquals(size, store.getTotalSize()); // check reconstituted size is same as the file
         
         System.out.println("-----------------------------------");
         System.out.println("---------- Restore file -------------");
@@ -47,7 +60,7 @@ public class Scratch {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         combiner.combine(megaCrcs, store, bout);
         System.out.println("re-constitued size: " + bout.size());
-        assertEquals(218870, bout.size()); // check reconstituted size is same as the file
+        assertEquals(size, bout.size()); // check reconstituted size is same as the file
         
         System.out.println("Final stats");
         System.out.println("Num blobs: " + store.getNumBlobs());

@@ -20,7 +20,7 @@ public class MemoryHashStore implements HashStore{
     
     @Override
     public void onChunk(long crc, int start, int finish, byte[] bytes) {
-        System.out.println("Chunk: " + crc + " range:" + start + " - " + finish );
+        //System.out.println("Chunk: " + crc + " range:" + start + " - " + finish );
         Chunk chunk = new Chunk();
         chunk.crc = crc;
         chunk.start = start;
@@ -32,7 +32,7 @@ public class MemoryHashStore implements HashStore{
 
     @Override
     public void onFanout(long crc, List<Long> childCrcs) {
-        System.out.println("Fanout: " + crc + " child crcs: " + childCrcs.size());
+        //System.out.println("Fanout: " + crc + " child crcs: " + childCrcs.size());
         mapOfFanouts.put(crc, childCrcs);
     }
 

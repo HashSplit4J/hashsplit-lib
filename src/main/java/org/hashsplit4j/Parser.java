@@ -42,6 +42,7 @@ public class Parser {
                 int x = rsum.getValue();
                 cnt++;
                 if ((x & MASK) == MASK) {
+                    System.out.println("Boundary: " + Integer.toHexString(x));
                     hashStore.onChunk(crc.getValue(), lastPos, cnt, bout.toByteArray());
                     bout.reset();
                     crcs.add(crc.getValue());
