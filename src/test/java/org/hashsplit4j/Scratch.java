@@ -40,9 +40,10 @@ public class Scratch {
                 common++;
             }
         }
-        System.out.println("Common blobs: " + common);
-        System.out.println("Total blobs: " + map1.size());
         int pc = common * 100/map1.size();
+        System.out.println("Common blobs: " + common);
+        System.out.println("Total blobs: " + map1.size());        
+        System.out.println("Common data: " + pc + "%");
         assertTrue("Must be at least " + minPercent + "% in common. Is " + pc + "%",  pc > minPercent ); // check at least 80% is common
     }
     
