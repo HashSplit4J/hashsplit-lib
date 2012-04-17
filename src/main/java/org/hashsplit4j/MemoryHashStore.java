@@ -70,5 +70,11 @@ public class MemoryHashStore implements HashStore{
     public long getNumFanouts() {
         return mapOfFanouts.size();
     }
+
+    public Map<Long, byte[]> getMapOfBlobs() {
+        return mapOfBlobs;
+    }
+    
+    
         
 }

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -17,7 +18,22 @@ public class Scratch {
     
     @Test
     public void scratchTest() throws IOException {
-        InputStream in = Scratch.class.getResourceAsStream("platypus.bmp");
+        Map<Long, byte[]> map1 = processFile("platypus.bmp");
+        Map<Long, byte[]> map2 = processFile("platypus-mod.bmp");
+        
+        // find out how many we have in common
+        int common = 0;
+        for( Long l : map1.keySet()) {
+            if( map2.containsKey(l)) {
+                common++;
+            }
+        }
+        System.out.println("Common blobs: " + common);
+        System.out.println("Total blobs: " + map1.size());
+    }
+    
+    public Map<Long,byte[]> processFile(String fname) throws IOException {
+        InputStream in = Scratch.class.getResourceAsStream(fname);
         //InputStream in = Scratch.class.getResourceAsStream("test1.txt");
         MemoryHashStore store = new MemoryHashStore();
         Parser parser = new Parser();
@@ -36,5 +52,6 @@ public class Scratch {
         System.out.println("Num blobs: " + store.getNumBlobs());
         System.out.println("Num chunks: " + store.getNumChunks());
         System.out.println("Num fanouts: " + store.getNumFanouts());
+        return store.getMapOfBlobs();
     }
 }
