@@ -1,0 +1,42 @@
+This is a library for splitting files into chunks which are fairly stable with file changes, which
+allows those chunks to be used as the basis for efficient file syncronisation.
+
+By "efficient" I mean:
+1. Efficient with respect to network bandwidth because only changed data needs to be syncronized
+2. Efficient with respect to storage, since file versions can be persisted with only changes across versions being stored
+3. Efficient with respect to CPU usage, because files can be easily reconstituted
+
+This library is inspired by BUP - https://github.com/apenwarr/bup/blob/master/DESIGN
+
+One major design choice, different to BUP, is that instead of implementing a tree of fanouts (as per the BUP design documentation) I've opted for a single level of chunk grouping. I think this makes it much simpler to parse a file, and also much simpler to use the result of the parse. I also think that a single level of grouping will be sufficient for minimising netwok traffic, provided we are more selective then BUP with grouping...
+
+BUP looks for boundaries by matching the lowest 13 bits of the rolling checksum, and then groups those chunks when the lowest 17bits are set. This means that the grouping is on average every 15 chunks (4bits=15), which seems to be too granular. I think we would probably want to group sets of 256, ie matching 21 bits. Given that the chunks information ends up 0.25% of the total file size, this means that the chunk groups will be 1/256 * 0.25% = 0.001% of total file size, about 10k for a 1Gb file. So I don't think we need to be any more granular then that.
+
+The main parsing class is Parser, which you use like this:
+        InputStream in = Scratch.class.getResourceAsStream(fname);
+        //InputStream in = Scratch.class.getResourceAsStream("test1.txt");
+        MemoryHashStore store = new MemoryHashStore();
+        Parser parser = new Parser();
+        List<Long> megaCrcs = parser.parse(in, store);
+
+
+Note that there is an abstraction layer for storing the parse result - HashStore:
+
+public interface HashStore {
+    public void onChunk(long crc, int start, int finish, byte[] bytes);
+    public void onFanout(long crc, List<Long> childCrcs);
+    public List<Long> getCrcsFromFanout(Long fanoutCrc);
+    public byte[] getBlob(Long crc);   
+}
+
+And there's a simple implementation for development - MemoryHashStore. A proper implementation will probably want to persist the data to a file, perhaps with some sort of index.
+
+
+Files can be reconstituted with the Combiner class:
+        Combiner combiner = new Combiner();
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        combiner.combine(megaCrcs, store, bout);
+
+
+
+
