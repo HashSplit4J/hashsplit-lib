@@ -57,8 +57,9 @@ public class FileBlobStore implements BlobStore{
     private void readBytes(RandomAccessFile raf, OutputStream bout, int length) throws IOException {
         byte[] arr = new byte[length];
         int s = raf.read(arr, 0, length);
-        while( s >= 0 ) {
+        while( s > 0 ) {
             bout.write(arr, 0, s);
+            length = length-s; // read only up to remaining expected bytes
             s = raf.read(arr, 0, length);
         }
     }

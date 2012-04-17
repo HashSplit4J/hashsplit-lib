@@ -23,14 +23,15 @@ public class MemoryBlobStore implements BlobStore {
     }
     
     @Override
-    public void setBlob(long crc, int start, byte[] bytes) {
+    public void setBlob(long hash, int start, byte[] bytes) {
         Chunk chunk = new Chunk();
-        chunk.crc = crc;
+        chunk.crc = hash;
         chunk.start = start;
         chunk.length = bytes.length;        
         chunk.blob = bytes;
-        mapOfChunks.put(crc, chunk);
+        mapOfChunks.put(hash, chunk);
         totalSize+=chunk.length;
+        System.out.println("Read: " + hash + " size: " + bytes.length);
     }
 
     public long getTotalSize() {
