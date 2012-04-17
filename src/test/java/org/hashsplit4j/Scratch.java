@@ -30,6 +30,7 @@ public class Scratch {
         }
         System.out.println("Common blobs: " + common);
         System.out.println("Total blobs: " + map1.size());
+        assertTrue( common * 100/map1.size() > 80 ); // check at least 80% is common
     }
     
     public Map<Long,byte[]> processFile(String fname) throws IOException {
