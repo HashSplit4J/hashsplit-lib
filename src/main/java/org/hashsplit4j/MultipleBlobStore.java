@@ -21,7 +21,7 @@ public class MultipleBlobStore implements BlobStore{
 
     @Override
     public void setBlob(long hash, int offset, byte[] bytes) {
-        store1.setBlob(hash, offset, bytes);
+
     }
 
     @Override

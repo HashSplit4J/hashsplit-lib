@@ -28,7 +28,7 @@ package org.hashsplit4j;
 
 /**
  * Implementation of rolling checksum for zsync purposes
- * @author Tomáš Hlavnička
+ * @author Tomáš Hlavni�?ka
  */
 public class Rsum implements Cloneable, java.io.Serializable {
     private short a;
@@ -132,3 +132,4 @@ public class Rsum implements Cloneable, java.io.Serializable {
         return ((Rsum) o).a == a && ((Rsum) o).b == b;
     }
 }
+

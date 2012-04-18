@@ -31,7 +31,7 @@ public class MemoryBlobStore implements BlobStore {
         chunk.blob = bytes;
         mapOfChunks.put(hash, chunk);
         totalSize+=chunk.length;
-        System.out.println("Read: " + hash + " size: " + bytes.length);
+        System.out.println("setBlob: " + hash + " size: " + bytes.length);
     }
 
     public long getTotalSize() {
