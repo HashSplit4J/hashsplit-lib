@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.zip.CRC32;
 
 /**
@@ -51,7 +50,7 @@ public class Parser {
                 int x = rsum.getValue();
                 cnt++;
                 if ((x & MASK) == MASK) {
-                    blobStore.setBlob(crc.getValue(), lastPos, bout.toByteArray());
+                    blobStore.setBlob(crc.getValue(), bout.toByteArray());
                     bout.reset();
                     crcs.add(crc.getValue());
                     crc.reset();
@@ -73,7 +72,7 @@ public class Parser {
         // Need to store terminal data, ie data which has been accumulated since the last boundary
         crcs.add(crc.getValue());
         long fanoutCrcVal = fanoutCrc.getValue();
-        blobStore.setBlob(crc.getValue(), lastPos, bout.toByteArray());
+        blobStore.setBlob(crc.getValue(), bout.toByteArray());
         hashStore.setFanout(fanoutCrcVal, crcs);
         fanoutCrcs.add(fanoutCrcVal);
         return fanoutCrcs;

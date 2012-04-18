@@ -52,10 +52,10 @@ public class FileBlobStore implements BlobStore{
     }
     
     @Override
-    public void setBlob(long crc, int start, byte[] bytes) {
+    public void setBlob(long crc, byte[] bytes) {
         Chunk chunk = new Chunk();
         chunk.crc = crc;
-        chunk.start = start;
+        chunk.start = totalSize;
         chunk.length = bytes.length;        
         mapOfChunks.put(crc, chunk);
         totalSize += bytes.length;
@@ -73,7 +73,7 @@ public class FileBlobStore implements BlobStore{
 
     public class Chunk {
         long crc;
-        int start;
+        long start;
         int length;
     }    
     

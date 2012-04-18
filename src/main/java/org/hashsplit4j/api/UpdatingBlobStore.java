@@ -15,10 +15,10 @@ public class UpdatingBlobStore implements BlobStore{
     
     
     @Override
-    public void setBlob(long hash, int offset, byte[] bytes) {
+    public void setBlob(long hash, byte[] bytes) {
         if( !remoteBlobStore.hasBlob(hash) ) {
             //System.out.println("Remote does not have blob: " + hash);
-            remoteBlobStore.setBlob(hash, offset, bytes);
+            remoteBlobStore.setBlob(hash, bytes);
         } else {
             //System.out.println("Found existing blob: " + hash);
         }    

@@ -21,7 +21,7 @@ public class HttpBlobStore implements BlobStore {
     }
 
     @Override
-    public void setBlob(long hash, int offset, byte[] bytes) {
+    public void setBlob(long hash, byte[] bytes) {
         String s = baseUrl + hash;
         PutMethod p = new PutMethod(s);
 

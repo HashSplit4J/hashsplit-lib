@@ -30,10 +30,10 @@ public class MemoryBlobStore implements BlobStore {
     }
     
     @Override
-    public void setBlob(long hash, int start, byte[] bytes) {
+    public void setBlob(long hash, byte[] bytes) {
         Chunk chunk = new Chunk();
         chunk.crc = hash;
-        chunk.start = start;
+        chunk.start = totalSize;
         chunk.length = bytes.length;        
         chunk.blob = bytes;
         mapOfChunks.put(hash, chunk);
@@ -55,7 +55,7 @@ public class MemoryBlobStore implements BlobStore {
      */
     public class Chunk {
         long crc;
-        int start;
+        long start;
         int length;
         byte[] blob;
     }                        
