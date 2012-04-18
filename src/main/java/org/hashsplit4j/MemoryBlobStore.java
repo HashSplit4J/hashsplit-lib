@@ -11,9 +11,16 @@ public class MemoryBlobStore implements BlobStore {
     private Map<Long,Chunk> mapOfChunks = new HashMap<Long, Chunk>();    
 
     private long totalSize;
+
+    @Override
+    public boolean hasBlob(long hash) {
+        return mapOfChunks.containsKey(hash);
+    }
+    
+    
     
     @Override
-    public byte[] getBlob(Long hash) {
+    public byte[] getBlob(long hash) {
         Chunk chunk = mapOfChunks.get(hash);
         if( chunk != null ) {
             return chunk.blob;

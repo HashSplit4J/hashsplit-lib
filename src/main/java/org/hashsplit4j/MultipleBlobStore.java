@@ -25,7 +25,17 @@ public class MultipleBlobStore implements BlobStore{
     }
 
     @Override
-    public byte[] getBlob(Long hash) {
+    public boolean hasBlob(long hash) {
+        if( store1.hasBlob(hash)) {
+            return true;
+        }
+        return store2.hasBlob(hash);
+    }
+
+    
+    
+    @Override
+    public byte[] getBlob(long hash) {
         byte[] arr = store1.getBlob(hash);
         if( arr == null ) {
             arr = store2.getBlob(hash);

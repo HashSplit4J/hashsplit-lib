@@ -22,12 +22,12 @@ public class MultipleHashStore implements HashStore{
    
 
     @Override
-    public void onFanout(long hash, List<Long> childCrcs) {
-        hashStore1.onFanout(hash, childCrcs);
+    public void setFanout(long hash, List<Long> childCrcs) {
+        hashStore1.setFanout(hash, childCrcs);
     }
 
     @Override
-    public List<Long> getFanout(Long fanoutHash) {
+    public List<Long> getFanout(long fanoutHash) {
         List<Long> list = hashStore1.getFanout(fanoutHash);
         if( list == null ) {
             list = hashStore2.getFanout(fanoutHash);            
@@ -47,5 +47,10 @@ public class MultipleHashStore implements HashStore{
 
     public int getStore2Hits() {
         return store2Hits;
-    }    
+    }
+
+    @Override
+    public boolean hasFanout(long fanoutHash) {
+        return getFanout(fanoutHash) != null;
+    }
 }

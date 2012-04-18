@@ -15,7 +15,9 @@ import java.util.List;
  */
 public interface HashStore {
 
-    public void onFanout(long hash, List<Long> childCrcs);
+    void setFanout(long hash, List<Long> childCrcs);
 
-    public List<Long> getFanout(Long fanoutHash);      
+    List<Long> getFanout(long fanoutHash);      
+    
+    boolean hasFanout(long fanoutHash);
 }

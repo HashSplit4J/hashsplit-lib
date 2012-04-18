@@ -58,7 +58,7 @@ public class Parser {
                     if ((x & FANOUT_MASK) == FANOUT_MASK) {
                         long fanoutCrcVal = fanoutCrc.getValue();
                         fanoutCrcs.add(fanoutCrcVal);
-                        hashStore.onFanout(fanoutCrcVal, crcs);
+                        hashStore.setFanout(fanoutCrcVal, crcs);
                         fanoutCrc.reset();
                         crcs = new ArrayList<Long>();
                     }
@@ -74,7 +74,7 @@ public class Parser {
         crcs.add(crc.getValue());
         long fanoutCrcVal = fanoutCrc.getValue();
         blobStore.setBlob(crc.getValue(), lastPos, bout.toByteArray());
-        hashStore.onFanout(fanoutCrcVal, crcs);
+        hashStore.setFanout(fanoutCrcVal, crcs);
         fanoutCrcs.add(fanoutCrcVal);
         return fanoutCrcs;
     }

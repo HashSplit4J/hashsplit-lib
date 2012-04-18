@@ -14,7 +14,9 @@ public interface BlobStore {
      * @param offset - index of first byte
      * @param blob  - bytes in the blob (where bytes are within each integer)
      */
-    public void setBlob(long hash, int offset, byte[] bytes);    
+    void setBlob(long hash, int offset, byte[] bytes);    
     
-    byte[] getBlob(Long hash);    
+    byte[] getBlob(long hash);    
+    
+    boolean hasBlob(long hash);
 }

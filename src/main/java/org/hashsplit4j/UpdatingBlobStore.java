@@ -16,8 +16,7 @@ public class UpdatingBlobStore implements BlobStore{
     
     @Override
     public void setBlob(long hash, int offset, byte[] bytes) {
-        byte[] arr = remoteBlobStore.getBlob(hash);
-        if( arr == null ) {
+        if( !remoteBlobStore.hasBlob(hash) ) {
             //System.out.println("Remote does not have blob: " + hash);
             remoteBlobStore.setBlob(hash, offset, bytes);
         } else {
@@ -26,8 +25,15 @@ public class UpdatingBlobStore implements BlobStore{
     }
 
     @Override
-    public byte[] getBlob(Long hash) {
+    public byte[] getBlob(long hash) {
         return remoteBlobStore.getBlob(hash);
     }
+
+    @Override
+    public boolean hasBlob(long hash) {
+        return remoteBlobStore.hasBlob(hash);
+    }
+    
+    
 
 }

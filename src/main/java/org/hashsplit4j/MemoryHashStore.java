@@ -16,17 +16,22 @@ public class MemoryHashStore implements HashStore{
     
     
     @Override
-    public void onFanout(long crc, List<Long> childCrcs) {
+    public void setFanout(long crc, List<Long> childCrcs) {
         //System.out.println("Fanout: " + crc + " child crcs: " + childCrcs.size());
         mapOfFanouts.put(crc, childCrcs);
     }
 
     @Override
-    public List<Long> getFanout(Long fanoutCrc) {
+    public List<Long> getFanout(long fanoutCrc) {
         return mapOfFanouts.get(fanoutCrc);
     }
     
     public long getNumFanouts() {
         return mapOfFanouts.size();
+    }
+
+    @Override
+    public boolean hasFanout(long fanoutHash) {
+        return getFanout(fanoutHash) != null;
     }
 }

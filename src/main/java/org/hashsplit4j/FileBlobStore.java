@@ -23,9 +23,16 @@ public class FileBlobStore implements BlobStore{
     public FileBlobStore(File file) {
         this.file = file;
     }
-       
+
     @Override
-    public byte[] getBlob(Long hash) {
+    public boolean hasBlob(long hash) {
+        return mapOfChunks.containsKey(hash);
+    }
+       
+    
+    
+    @Override
+    public byte[] getBlob(long hash) {
         if( raf == null ) {
             throw new IllegalStateException("File has not been opened, please call openForRead (and then close when finished!");
         }
