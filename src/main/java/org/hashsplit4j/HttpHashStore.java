@@ -1,7 +1,7 @@
 package org.hashsplit4j;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.*;
@@ -27,16 +27,23 @@ public class HttpHashStore implements HashStore {
         String s = baseUrl + hash;
         PutMethod p = new PutMethod(s);
 
+        // Copy longs into a byte array
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        for(Long l : childCrcs ) {
-            
+        DataOutputStream dos = new DataOutputStream(bout);
+        try {
+            for (Long l : childCrcs) {
+                dos.writeLong(l);
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
-        
+        byte[] hashes = bout.toByteArray();
+
         HttpMethodParams params = new HttpMethodParams();
         params.setSoTimeout(timeout);
         p.setParams(params);
         try {
-            RequestEntity requestEntity = new ByteArrayRequestEntity(bytes);
+            RequestEntity requestEntity = new ByteArrayRequestEntity(hashes);
 
             p.setRequestEntity(requestEntity);
             int result = client.executeMethod(p);
@@ -60,7 +67,18 @@ public class HttpHashStore implements HashStore {
             if (result < 200 || result >= 300) {
                 throw new RuntimeException("Upload failed. result:" + result);
             }
-            return getMethod.getResponseBody();
+            byte[] arr = getMethod.getResponseBody();
+            ByteArrayInputStream bin = new ByteArrayInputStream(arr);
+            List<Long> list = new ArrayList<Long>();
+            DataInputStream din = new DataInputStream(bin);
+            try {
+                while (true) {
+                    list.add(din.readLong());
+                }
+            } catch (EOFException e) {
+                // cool
+            }
+            return list;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -74,23 +92,21 @@ public class HttpHashStore implements HashStore {
         int result;
         try {
             result = client.executeMethod(opts);
-            if( result >= 500 ) {
+            if (result >= 500) {
                 throw new RuntimeException("Server error: " + result);
             }
             if (result == 404) {
                 return false;
             }
-            if( result >= 200 && result < 300 ) {
+            if (result >= 200 && result < 300) {
                 return true;
             }
             throw new RuntimeException("Invalid response code: " + result);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-    }    
-    
+    }
 
-    
     public int getTimeout() {
         return timeout;
     }
@@ -113,5 +129,4 @@ public class HttpHashStore implements HashStore {
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
-
 }
