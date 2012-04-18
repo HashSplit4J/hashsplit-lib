@@ -1,5 +1,12 @@
-package org.hashsplit4j;
+package org.hashsplit4j.api;
 
+import org.hashsplit4j.api.MultipleHashStore;
+import org.hashsplit4j.api.MultipleBlobStore;
+import org.hashsplit4j.api.MemoryBlobStore;
+import org.hashsplit4j.api.FileBlobStore;
+import org.hashsplit4j.api.Combiner;
+import org.hashsplit4j.api.MemoryHashStore;
+import org.hashsplit4j.api.Parser;
 import java.io.*;
 import java.util.List;
 import static org.junit.Assert.*;
@@ -34,7 +41,7 @@ public class DownloadSyncSimulation {
         // so we now have the equivalent of a server
         
         MemoryHashStore clientHashStore = new MemoryHashStore();
-        File clientOrigFile = new File("src/test/resources/org/hashsplit4j/platypus.bmp");
+        File clientOrigFile = new File("src/test/resources/org/hashsplit4j/api/platypus.bmp");
         FileBlobStore clientBlobStore = new FileBlobStore(clientOrigFile);
         FileInputStream clientFileData = new FileInputStream(clientOrigFile);
         parser.parse(clientFileData, clientHashStore, clientBlobStore);

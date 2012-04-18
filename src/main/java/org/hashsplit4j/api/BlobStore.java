@@ -1,4 +1,4 @@
-package org.hashsplit4j;
+package org.hashsplit4j.api;
 
 /**
  * Represents a means of obtaining data for a chunk, indexed by its hash

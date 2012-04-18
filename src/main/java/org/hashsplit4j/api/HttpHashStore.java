@@ -1,4 +1,4 @@
-package org.hashsplit4j;
+package org.hashsplit4j.api;
 
 import java.io.*;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package org.hashsplit4j;
+package org.hashsplit4j.api;
 
 /**
  * Supports a common use case of having a more preferential BlobStore (eg local) and a 

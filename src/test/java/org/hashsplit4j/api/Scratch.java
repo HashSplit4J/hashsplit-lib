@@ -1,5 +1,10 @@
-package org.hashsplit4j;
+package org.hashsplit4j.api;
 
+import org.hashsplit4j.api.MemoryBlobStore;
+import org.hashsplit4j.api.FileBlobStore;
+import org.hashsplit4j.api.Combiner;
+import org.hashsplit4j.api.MemoryHashStore;
+import org.hashsplit4j.api.Parser;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +35,7 @@ public class Scratch {
     @Test
     public void testFileBlobStore() throws IOException {
         MemoryHashStore hashStore = new MemoryHashStore();
-        File file = new File("src/test/resources/org/hashsplit4j/test1.txt");
+        File file = new File("src/test/resources/org/hashsplit4j/api/test1.txt");
         FileBlobStore blobStore = new FileBlobStore(file);
         Parser parser = new Parser();
         FileInputStream in = new FileInputStream(file);

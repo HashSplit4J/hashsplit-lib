@@ -24,7 +24,7 @@
       USA
  */
 
-package org.hashsplit4j;
+package org.hashsplit4j.api;
 
 /**
  * Implementation of rolling checksum for zsync purposes

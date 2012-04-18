@@ -1,5 +1,10 @@
-package org.hashsplit4j;
+package org.hashsplit4j.api;
 
+import org.hashsplit4j.api.MemoryBlobStore;
+import org.hashsplit4j.api.UpdatingBlobStore;
+import org.hashsplit4j.api.MemoryHashStore;
+import org.hashsplit4j.api.UpdatingHashStore;
+import org.hashsplit4j.api.Parser;
 import java.io.*;
 import java.util.List;
 import org.junit.Test;
@@ -29,7 +34,7 @@ public class UploadSyncSimulation {
         System.out.println("------------------------------------------------------");
         System.out.println("----- Now process file and send changes to server ------");
         UpdatingHashStore clientHashStore = new UpdatingHashStore(serverHashStore);
-        File clientModFile = new File("src/test/resources/org/hashsplit4j/platypus-mod.bmp");
+        File clientModFile = new File("src/test/resources/org/hashsplit4j/api/platypus-mod.bmp");
         UpdatingBlobStore updatingBlobStore = new UpdatingBlobStore(serverBlobStore); // blobs will be sent to the server store
         FileInputStream clientFileData = new FileInputStream(clientModFile);
         parser.parse(clientFileData, clientHashStore, updatingBlobStore);        
