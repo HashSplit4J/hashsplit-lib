@@ -20,7 +20,7 @@ public class Combiner {
                     throw new RuntimeException("Failed to lookup blob: " + hash);
                 }
                 //System.out.println("Chunk: " + hash + " range: " + lastPos + " - " + (lastPos+arr.length));                
-                System.out.println("Write: " + hash + " size: " + arr.length);
+                System.out.println("Write: " + Long.toHexString(hash) + " size: " + arr.length);
                 out.write(arr);                
                 lastPos+=arr.length;
             }
