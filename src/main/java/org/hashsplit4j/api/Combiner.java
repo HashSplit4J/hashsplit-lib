@@ -11,10 +11,9 @@ import java.util.List;
  */
 public class Combiner {
     public void combine(List<Long> megaCrcs, HashStore hashStore, BlobStore blobStore, OutputStream out) throws IOException {
-        long lastPos = 0;
         for( Long fanoutHash : megaCrcs ) {
-            List<Long> crcs = hashStore.getFanout(fanoutHash);
-            for( Long hash : crcs ) {
+            Fanout fanout = hashStore.getFanout(fanoutHash);
+            for( Long hash : fanout.getHashes() ) {
                 byte[] arr = blobStore.getBlob(hash);
                 if( arr == null ) {
                     throw new RuntimeException("Failed to lookup blob: " + hash);
@@ -22,7 +21,6 @@ public class Combiner {
                 //System.out.println("Chunk: " + hash + " range: " + lastPos + " - " + (lastPos+arr.length));                
                 System.out.println("Write: " + Long.toHexString(hash) + " size: " + arr.length);
                 out.write(arr);                
-                lastPos+=arr.length;
             }
             //System.out.println("Fanout: " + fanoutHash);
         }

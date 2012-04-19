@@ -1,12 +1,6 @@
 package org.hashsplit4j.api;
 
-import org.hashsplit4j.api.MemoryBlobStore;
-import org.hashsplit4j.api.UpdatingBlobStore;
-import org.hashsplit4j.api.MemoryHashStore;
-import org.hashsplit4j.api.UpdatingHashStore;
-import org.hashsplit4j.api.Parser;
 import java.io.*;
-import java.util.List;
 import org.junit.Test;
 
 /**

@@ -12,17 +12,18 @@ import java.util.Map;
  */
 public class MemoryHashStore implements HashStore{
     
-    private Map<Long,List<Long>> mapOfFanouts = new HashMap<Long,List<Long>>(); // keyed by the crc of the fanout chunk, gives a list of chunk crc's
+    private Map<Long,Fanout> mapOfFanouts = new HashMap<Long,Fanout>(); // keyed by the crc of the fanout chunk, gives a list of chunk crc's
     
     
     @Override
-    public void setFanout(long crc, List<Long> childCrcs) {
+    public void setFanout(long crc, List<Long> childCrcs, long actualContentLength) {
         //System.out.println("Fanout: " + crc + " child crcs: " + childCrcs.size());
-        mapOfFanouts.put(crc, childCrcs);
+        Fanout fanout = new FanoutImpl(childCrcs, actualContentLength);
+        mapOfFanouts.put(crc, fanout);
     }
 
     @Override
-    public List<Long> getFanout(long fanoutCrc) {
+    public Fanout getFanout(long fanoutCrc) {
         return mapOfFanouts.get(fanoutCrc);
     }
     

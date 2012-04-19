@@ -23,14 +23,15 @@ public class HttpHashStore implements HashStore {
     }
 
     @Override
-    public void setFanout(long hash, List<Long> childCrcs) {
+    public void setFanout(long hash, List<Long> childCrcs, long actualContentLength) {
         String s = baseUrl + hash;
         PutMethod p = new PutMethod(s);
 
         // Copy longs into a byte array
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(bout);
+        DataOutputStream dos = new DataOutputStream(bout);        
         try {
+            dos.writeLong(actualContentLength); // send the actualContentLength first
             for (Long l : childCrcs) {
                 dos.writeLong(l);
             }
@@ -58,7 +59,7 @@ public class HttpHashStore implements HashStore {
     }
 
     @Override
-    public List<Long> getFanout(long fanoutHash) {
+    public Fanout getFanout(long fanoutHash) {
         String s = baseUrl + fanoutHash;
         GetMethod getMethod = new GetMethod(s);
         int result;
@@ -71,6 +72,7 @@ public class HttpHashStore implements HashStore {
             ByteArrayInputStream bin = new ByteArrayInputStream(arr);
             List<Long> list = new ArrayList<Long>();
             DataInputStream din = new DataInputStream(bin);
+            long actualContentLength = din.readLong();
             try {
                 while (true) {
                     list.add(din.readLong());
@@ -78,7 +80,7 @@ public class HttpHashStore implements HashStore {
             } catch (EOFException e) {
                 // cool
             }
-            return list;
+            return new FanoutImpl(list, actualContentLength);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

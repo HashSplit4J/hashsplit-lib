@@ -16,17 +16,17 @@ public class UpdatingHashStore implements HashStore{
         
     
     @Override
-    public void setFanout(long hash, List<Long> childCrcs) {
+    public void setFanout(long hash, List<Long> childCrcs, long actualContentLength) {
         if( !remoteHashStore.hasFanout(hash) ) {
             System.out.println("Adding new fanout: " + hash);
-            remoteHashStore.setFanout(hash, childCrcs);
+            remoteHashStore.setFanout(hash, childCrcs, actualContentLength);
         } else {
             System.out.println("Remote has existing fanout: " + hash);
         }
     }
 
     @Override
-    public List<Long> getFanout(long fanoutHash) {
+    public Fanout getFanout(long fanoutHash) {
         return null;
     }
 

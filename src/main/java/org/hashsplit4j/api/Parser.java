@@ -36,6 +36,7 @@ public class Parser {
         List<Long> crcs = new ArrayList<Long>();
         CRC32 crc = new CRC32();
         CRC32 fanoutCrc = new CRC32();
+        long fanoutLength = 0;
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         byte[] arr = new byte[1024];
         int s = in.read(arr, 0, 1024);
@@ -46,6 +47,7 @@ public class Parser {
                 rsum.roll(b);
                 crc.update(b);
                 fanoutCrc.update(b);
+                fanoutLength++;
                 bout.write(b);
                 int x = rsum.getValue();
                 cnt++;
@@ -57,7 +59,8 @@ public class Parser {
                     if ((x & FANOUT_MASK) == FANOUT_MASK) {
                         long fanoutCrcVal = fanoutCrc.getValue();
                         fanoutCrcs.add(fanoutCrcVal);
-                        hashStore.setFanout(fanoutCrcVal, crcs);
+                        hashStore.setFanout(fanoutCrcVal, crcs, fanoutLength);
+                        fanoutLength = 0;
                         fanoutCrc.reset();
                         crcs = new ArrayList<Long>();
                     }
@@ -73,7 +76,7 @@ public class Parser {
         crcs.add(crc.getValue());
         long fanoutCrcVal = fanoutCrc.getValue();
         blobStore.setBlob(crc.getValue(), bout.toByteArray());
-        hashStore.setFanout(fanoutCrcVal, crcs);
+        hashStore.setFanout(fanoutCrcVal, crcs, fanoutLength);
         fanoutCrcs.add(fanoutCrcVal);
         return fanoutCrcs;
     }
