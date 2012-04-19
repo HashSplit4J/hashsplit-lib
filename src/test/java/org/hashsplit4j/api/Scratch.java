@@ -1,7 +1,6 @@
 package org.hashsplit4j.api;
 
 import java.io.*;
-import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 
@@ -34,14 +33,15 @@ public class Scratch {
         FileBlobStore blobStore = new FileBlobStore(file);
         Parser parser = new Parser();
         FileInputStream in = new FileInputStream(file);
-        List<Long> megaCrcs = parser.parse(in, hashStore, blobStore);
+        long fileHash = parser.parse(in, hashStore, blobStore);
         in.close();
         assertEquals(file.length(), blobStore.getTotalSize()); // check reconstituted size is same as the file
 
         blobStore.openForRead();
         Combiner combiner = new Combiner();
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        combiner.combine(megaCrcs, hashStore, blobStore, bout);
+        Fanout fileFanout = hashStore.getFanout(fileHash);
+        combiner.combine(fileFanout.getHashes(), hashStore, blobStore, bout);
         System.out.println("re-constitued size: " + bout.size());
         assertEquals(file.length(), bout.size()); // check reconstituted size is same as the file        
         blobStore.close();
@@ -69,14 +69,15 @@ public class Scratch {
         MemoryHashStore hashStore = new MemoryHashStore();
         MemoryBlobStore blobStore = new MemoryBlobStore();
         Parser parser = new Parser();
-        List<Long> megaCrcs = parser.parse(in, hashStore, blobStore);
+        long fileHash = parser.parse(in, hashStore, blobStore);
         assertEquals(size, blobStore.getTotalSize()); // check reconstituted size is same as the file
 
         System.out.println("-----------------------------------");
         System.out.println("---------- Restore file -------------");
         Combiner combiner = new Combiner();
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        combiner.combine(megaCrcs, hashStore, blobStore, bout);
+        Fanout fileFanout = hashStore.getFanout(fileHash);
+        combiner.combine(fileFanout.getHashes(), hashStore, blobStore, bout);
         System.out.println("re-constitued size: " + bout.size());
         assertEquals(size, bout.size()); // check reconstituted size is same as the file
 

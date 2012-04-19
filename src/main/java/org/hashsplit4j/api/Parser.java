@@ -27,35 +27,49 @@ public class Parser {
     private static final int MASK = 0x0FFF;
     private static final int FANOUT_MASK = 0x7FFFF;
 
-    public List<Long> parse(InputStream in, HashStore hashStore, BlobStore blobStore) throws IOException {
+    /**
+     * Returns a hash of the whole file. This can be used to locate the 
+     * 
+     * @param in
+     * @param hashStore
+     * @param blobStore
+     * @return
+     * @throws IOException 
+     */
+    public long parse(InputStream in, HashStore hashStore, BlobStore blobStore) throws IOException {
         Rsum rsum = new Rsum(128);
         int cnt = 0;
-        int lastPos = 0;
         int numBlocks = 0;
+        byte[] arr = new byte[1024];
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();        
 
         List<Long> crcs = new ArrayList<Long>();
-        CRC32 crc = new CRC32();
+        CRC32 blobCrc = new CRC32();
         CRC32 fanoutCrc = new CRC32();
+        CRC32 fileCrc = new CRC32();
+        
         long fanoutLength = 0;
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        byte[] arr = new byte[1024];
+        long fileLength = 0;        
+        
         int s = in.read(arr, 0, 1024);
         List<Long> fanoutCrcs = new ArrayList<Long>();
         while (s >= 0) {
             for (int i = 0; i < s; i++) {
                 byte b = arr[i];
                 rsum.roll(b);
-                crc.update(b);
+                blobCrc.update(b);
                 fanoutCrc.update(b);
+                fileCrc.update(b);
                 fanoutLength++;
+                fileLength++;
                 bout.write(b);
                 int x = rsum.getValue();
                 cnt++;
                 if ((x & MASK) == MASK) {
-                    blobStore.setBlob(crc.getValue(), bout.toByteArray());
+                    blobStore.setBlob(blobCrc.getValue(), bout.toByteArray());
                     bout.reset();
-                    crcs.add(crc.getValue());
-                    crc.reset();
+                    crcs.add(blobCrc.getValue());
+                    blobCrc.reset();
                     if ((x & FANOUT_MASK) == FANOUT_MASK) {
                         long fanoutCrcVal = fanoutCrc.getValue();
                         fanoutCrcs.add(fanoutCrcVal);
@@ -65,7 +79,6 @@ public class Parser {
                         crcs = new ArrayList<Long>();
                     }
                     numBlocks++;
-                    lastPos = cnt;
                     rsum.reset();
                 }
             }
@@ -73,11 +86,16 @@ public class Parser {
             s = in.read(arr, 0, 1024);
         }
         // Need to store terminal data, ie data which has been accumulated since the last boundary
-        crcs.add(crc.getValue());
+        crcs.add(blobCrc.getValue());
         long fanoutCrcVal = fanoutCrc.getValue();
-        blobStore.setBlob(crc.getValue(), bout.toByteArray());
+        blobStore.setBlob(blobCrc.getValue(), bout.toByteArray());
         hashStore.setFanout(fanoutCrcVal, crcs, fanoutLength);
         fanoutCrcs.add(fanoutCrcVal);
-        return fanoutCrcs;
+        
+        // Now store a fanout for the whole file. The contained hashes locate other fanouts
+        long fileCrcVal = fileCrc.getValue();                
+        hashStore.setFanout(fileCrcVal, fanoutCrcs, fileLength);
+                
+        return fileCrcVal;
     }
 }

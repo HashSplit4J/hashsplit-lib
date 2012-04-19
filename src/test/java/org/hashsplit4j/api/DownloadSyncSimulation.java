@@ -30,7 +30,8 @@ public class DownloadSyncSimulation {
         MemoryHashStore serverHashStore = new MemoryHashStore();
         InputStream serverFileData = Scratch.class.getResourceAsStream("platypus-mod.bmp");
         Parser parser = new Parser();
-        List<Long> serverFanouts = parser.parse(serverFileData, serverHashStore, serverBlobStore);
+        long fileHash = parser.parse(serverFileData, serverHashStore, serverBlobStore);
+        List<Long> serverFanouts = serverHashStore.getFanout(fileHash).getHashes();
         // so we now have the equivalent of a server
         
         MemoryHashStore clientHashStore = new MemoryHashStore();
