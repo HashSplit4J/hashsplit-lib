@@ -1,6 +1,7 @@
 package org.hashsplit4j.api;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.List;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -52,9 +53,10 @@ public class DownloadSyncSimulation {
         // and iterate over the contained chunks. For each chunk we try to get
         // a blob from the local copy if possible, and only go to server for blobs
         // that we don't have locally
-        MultipleBlobStore multipleBlobStore = new MultipleBlobStore(clientBlobStore, serverBlobStore); // use client preferentially to server to minimise network
-        MultipleHashStore multipleHashStore = new MultipleHashStore(clientHashStore, serverHashStore);
-        Combiner combiner = new Combiner();
+        
+        MultipleBlobStore multipleBlobStore = new MultipleBlobStore(Arrays.asList(clientBlobStore, serverBlobStore)); // use client preferentially to server to minimise network
+        MultipleHashStore multipleHashStore = new MultipleHashStore(Arrays.asList(clientHashStore, serverHashStore));
+        Combiner combiner = new Combiner(); 
         combiner.combine(serverFanouts, multipleHashStore, multipleBlobStore, fout);
         clientBlobStore.close(); // close the local file blob store
         fout.flush();                

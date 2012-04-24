@@ -1,60 +1,45 @@
 package org.hashsplit4j.api;
 
+import java.util.List;
+
 /**
- * Supports a common use case of having a more preferential BlobStore (eg local) and a 
- * less preferential BlobStore (eg remote)
+ * Supports a common use case of having a more preferential BlobStore (eg local)
+ * and a less preferential BlobStore (eg remote)
  *
  * @author brad
  */
-public class MultipleBlobStore implements BlobStore{
-    private final BlobStore store1;
-    private final BlobStore store2;
+public class MultipleBlobStore implements BlobStore {
 
-    private int store1Hits;
-    private int store2Hits;
-    
-    public MultipleBlobStore(BlobStore store1, BlobStore store2) {
-        this.store1 = store1;
-        this.store2 = store2;
+    private final List<BlobStore> stores;
+    private final BlobStore firstStore;
+
+    public MultipleBlobStore(List<BlobStore> stores) {
+        this.stores = stores;
+        this.firstStore = stores.get(0);
     }
-       
 
     @Override
     public void setBlob(long hash, byte[] bytes) {
-
     }
 
     @Override
     public boolean hasBlob(long hash) {
-        if( store1.hasBlob(hash)) {
-            return true;
+        for (BlobStore store : stores) {
+            if (store.hasBlob(hash)) {
+                return true;
+            }
         }
-        return store2.hasBlob(hash);
+        return false;
     }
 
-    
-    
     @Override
     public byte[] getBlob(long hash) {
-        byte[] arr = store1.getBlob(hash);
-        if( arr == null ) {
-            arr = store2.getBlob(hash);
+        for (BlobStore store : stores) {
+            byte[] arr = store.getBlob(hash);
             if( arr != null ) {
-                store2Hits++;
+                return arr;
             }
-        } else {
-            store1Hits++;
         }
-        return arr;
+        return null;
     }
-
-    public int getStore1Hits() {
-        return store1Hits;
-    }
-
-    public int getStore2Hits() {
-        return store2Hits;
-    }
-    
-    
 }

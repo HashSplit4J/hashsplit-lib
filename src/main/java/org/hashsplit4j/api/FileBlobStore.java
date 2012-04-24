@@ -28,8 +28,10 @@ public class FileBlobStore implements BlobStore{
     public boolean hasBlob(long hash) {
         return mapOfChunks.containsKey(hash);
     }
-       
-    
+
+    public File getFile() {
+        return file;
+    }           
     
     @Override
     public byte[] getBlob(long hash) {

@@ -3,54 +3,47 @@ package org.hashsplit4j.api;
 import java.util.List;
 
 /**
+ * Normally used for optimising network traffic. For example, if you have a
+ * local hash store with a subset of data, and a remote hash store with a full
+ * set, you would use this with both, with the local hash store given first
+ *
+ * Mutating operations are only delegated to the first store
  *
  * @author brad
  */
-public class MultipleHashStore implements HashStore{
-    
-    private final HashStore hashStore1;
-    private final HashStore hashStore2;
+public class MultipleHashStore implements HashStore {
 
-    private int store1Hits;
-    private int store2Hits;    
-    
-    public MultipleHashStore(HashStore hashStore1, HashStore hashStore2) {
-        this.hashStore1 = hashStore1;
-        this.hashStore2 = hashStore2;
+    private final List<? extends HashStore> hashStores;
+    private final HashStore firstHashStore;
+
+    public MultipleHashStore(List<? extends HashStore> hashStores) {
+        this.hashStores = hashStores;
+        firstHashStore = hashStores.get(0);
     }
-    
-   
 
     @Override
     public void setFanout(long hash, List<Long> childCrcs, long actualContentLength) {
-        hashStore1.setFanout(hash, childCrcs, actualContentLength);
+        firstHashStore.setFanout(hash, childCrcs, actualContentLength);
     }
 
     @Override
     public Fanout getFanout(long fanoutHash) {
-        Fanout fanout = hashStore1.getFanout(fanoutHash);
-        if( fanout == null ) {
-            fanout = hashStore2.getFanout(fanoutHash);            
-            if( fanout != null ) {
-                store2Hits++;
+        for (HashStore store  : hashStores) {
+            Fanout fanout = store.getFanout(fanoutHash);
+            if (fanout != null) {
+                return fanout;
             }
-        } else {
-            store1Hits++;
         }
-        return fanout;
-    }
-
-
-    public int getStore1Hits() {
-        return store1Hits;
-    }
-
-    public int getStore2Hits() {
-        return store2Hits;
+        return null;
     }
 
     @Override
     public boolean hasFanout(long fanoutHash) {
-        return getFanout(fanoutHash) != null;
+        for (HashStore store  : hashStores) {
+            if( store.hasFanout(fanoutHash) ) {
+                return true;
+            }
+        }
+        return false;
     }
 }

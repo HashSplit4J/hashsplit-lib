@@ -10,26 +10,43 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 /**
  * Implements getting and setting fanout hashes over HTTP
  *
+ * Can use an optional HashCache to record knowledge of the existence of objects
+ * in the remote repository
+ *
  * @author brad
  */
 public class HttpHashStore implements HashStore {
 
     private final HttpClient client;
-    private int timeout = 30;
+    private final HashCache hashCache;
+    private int timeout = 30000;
     private String baseUrl;
+    private long gets;
+    private long sets;
 
-    public HttpHashStore(HttpClient client) {
+    /**
+     *
+     * @param client
+     * @param hashCache - optional, may be null. If provided will be used to
+     * optimise hasFanout
+     */
+    public HttpHashStore(HttpClient client, HashCache hashCache) {
         this.client = client;
+        this.hashCache = hashCache;
     }
 
     @Override
     public void setFanout(long hash, List<Long> childCrcs, long actualContentLength) {
+        if (hasFanout(hash)) {
+            return;
+        }
+        sets++;
         String s = baseUrl + hash;
         PutMethod p = new PutMethod(s);
 
         // Copy longs into a byte array
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(bout);        
+        DataOutputStream dos = new DataOutputStream(bout);
         try {
             dos.writeLong(actualContentLength); // send the actualContentLength first
             for (Long l : childCrcs) {
@@ -51,6 +68,10 @@ public class HttpHashStore implements HashStore {
             if (result < 200 || result >= 300) {
                 throw new RuntimeException("Upload failed. result:" + result);
             }
+            if (hashCache != null) {
+                hashCache.setHash(hash);
+            }
+
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         } finally {
@@ -60,13 +81,14 @@ public class HttpHashStore implements HashStore {
 
     @Override
     public Fanout getFanout(long fanoutHash) {
+        gets++;
         String s = baseUrl + fanoutHash;
         GetMethod getMethod = new GetMethod(s);
         int result;
         try {
             result = client.executeMethod(getMethod);
             if (result < 200 || result >= 300) {
-                throw new RuntimeException("Upload failed. result:" + result);
+                throw new RuntimeException("Download failed. result:" + result + " url: " + s);
             }
             byte[] arr = getMethod.getResponseBody();
             ByteArrayInputStream bin = new ByteArrayInputStream(arr);
@@ -80,6 +102,10 @@ public class HttpHashStore implements HashStore {
             } catch (EOFException e) {
                 // cool
             }
+
+            if (hashCache != null) {
+                hashCache.setHash(fanoutHash);
+            }
             return new FanoutImpl(list, actualContentLength);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -89,6 +115,11 @@ public class HttpHashStore implements HashStore {
 
     @Override
     public boolean hasFanout(long fanoutHash) {
+        if (hashCache != null) {
+            if (hashCache.hasHash(fanoutHash)) { // say that 3 times quickly!!!  :)
+                return true;
+            }
+        }
         String s = baseUrl + fanoutHash;
         OptionsMethod opts = new OptionsMethod(s);
         int result;
@@ -101,6 +132,9 @@ public class HttpHashStore implements HashStore {
                 return false;
             }
             if (result >= 200 && result < 300) {
+                if (hashCache != null) {
+                    hashCache.setHash(fanoutHash);
+                }
                 return true;
             }
             throw new RuntimeException("Invalid response code: " + result);
@@ -130,5 +164,13 @@ public class HttpHashStore implements HashStore {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public long getGets() {
+        return gets;
+    }
+
+    public long getSets() {
+        return sets;
     }
 }
