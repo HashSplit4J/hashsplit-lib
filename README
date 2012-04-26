@@ -1,6 +1,14 @@
 This is a library for splitting files into chunks which are fairly stable with file changes, which
 allows those chunks to be used as the basis for efficient file syncronisation.
 
+For discussions please see the group:
+spliffy-users@googlegroups.com
+https://groups.google.com/d/forum/spliffy-users
+
+Latest build:
+    TBA
+
+
 By "efficient" I mean:
 1. Efficient with respect to network bandwidth because only changed data needs to be syncronized
 2. Efficient with respect to storage, since file versions can be persisted with only changes across versions being stored
