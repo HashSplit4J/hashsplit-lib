@@ -6,6 +6,23 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>hashsplit4j-lib</name>
+    <distributionManagement>
+        <repository>
+            <id>ettrema-repo</id>
+            <url>http://www.ettrema.com/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>ettrema-repo</id>
+            <url>http://www.ettrema.com/maven2</url>
+        </snapshotRepository>
+    </distributionManagement>
+    <developers>
+        <developer>
+            <name>Brad McEvoy</name>
+            <timezone>GMT+12</timezone>
+        </developer>
+    </developers>    
     <dependencies>
         <dependency>
             <groupId>commons-httpclient</groupId>
