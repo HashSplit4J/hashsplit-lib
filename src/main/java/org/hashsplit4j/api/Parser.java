@@ -8,7 +8,7 @@ import org.apache.commons.io.IOUtils;
 
 /**
  * The parser will take a stream of bytes and split it into chunks with an
- * average size of 8192 bytes. The chunk boundaries are determined by looking at
+ * average size of MASK bytes (eg 8k for BUP, 64k for us). The chunk boundaries are determined by looking at
  * a rolling checksum of the last 128 bytes, when the lowest 13 bits of this
  * checksum we take that as a boundary.
  *
@@ -23,19 +23,19 @@ import org.apache.commons.io.IOUtils;
  */
 public class Parser {
 
-    private static final int MASK = 0x0FFF;
-    private static final int FANOUT_MASK = 0x7FFFF;
+    private static final int MASK = 0xFFFF;  // average blob size of 64k
+    private static final int FANOUT_MASK = 0x7FFFFFF; // about 1024 hashes per fanout
 
-    public static void parse(File f, BlobStore blobStore, HashStore hashStore) throws FileNotFoundException, IOException {
+    public static long parse(File f, BlobStore blobStore, HashStore hashStore) throws FileNotFoundException, IOException {
         Parser parser = new Parser();
         FileInputStream fin = null;
+        BufferedInputStream bufIn = null;
         try {
-            fin = new FileInputStream(f);
-            BufferedInputStream bufIn = new BufferedInputStream(fin);
-            parser.parse(bufIn, hashStore, blobStore);
-            bufIn.close();
-            fin.close();
+            fin = new FileInputStream(f);            
+            bufIn = new BufferedInputStream(fin);
+            return parser.parse(bufIn, hashStore, blobStore);
         } finally {
+            IOUtils.closeQuietly(bufIn);
             IOUtils.closeQuietly(fin);
         }
     }
