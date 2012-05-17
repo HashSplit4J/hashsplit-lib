@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>hashsplit4j</groupId>
     <artifactId>hashsplit4j-lib</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>hashsplit4j-lib</name>
     <distributionManagement>
