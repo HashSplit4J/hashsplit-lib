@@ -1,9 +1,18 @@
 package org.hashsplit4j.api;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.*;
-import org.apache.commons.httpclient.params.HttpMethodParams;
+import java.io.InputStream;
+import java.io.OutputStream;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ByteArrayEntity;
 
 /**
  * Implements getting and setting blobs over HTTP
@@ -30,16 +39,14 @@ public class HttpBlobStore implements BlobStore {
             return;
         }
         String s = baseUrl + hash;
-        PutMethod p = new PutMethod(s);
+        HttpPut p = new HttpPut(s);
 
-        HttpMethodParams params = new HttpMethodParams();
-        params.setSoTimeout(timeout);
-        p.setParams(params);
         try {
-            RequestEntity requestEntity = new ByteArrayRequestEntity(bytes);
+            HttpEntity requestEntity = new ByteArrayEntity(bytes);
 
-            p.setRequestEntity(requestEntity);
-            int result = client.executeMethod(p);
+            p.setEntity(requestEntity);
+            HttpResponse resp = client.execute(p);
+            int result = resp.getStatusLine().getStatusCode();
             if (result < 200 || result >= 300) {
                 throw new RuntimeException("Upload failed. result:" + result);
             }
@@ -48,8 +55,6 @@ public class HttpBlobStore implements BlobStore {
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
-        } finally {
-            p.releaseConnection();
         }
     }
 
@@ -61,11 +66,11 @@ public class HttpBlobStore implements BlobStore {
             }
         }
         String s = baseUrl + hash;
-        OptionsMethod opts = new OptionsMethod(s);
+        HttpOptions opts = new HttpOptions(s);
         int result;
         try {
-
-            result = client.executeMethod(opts);
+            HttpResponse resp = client.execute(opts);
+            result = resp.getStatusLine().getStatusCode();
             if (result >= 500) {
                 throw new RuntimeException("Server error: " + result);
             }
@@ -87,17 +92,18 @@ public class HttpBlobStore implements BlobStore {
     @Override
     public byte[] getBlob(long hash) {
         String s = baseUrl + hash;
-        GetMethod getMethod = new GetMethod(s);
+        HttpGet getMethod = new HttpGet(s);
         int result;
         try {
-            result = client.executeMethod(getMethod);
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            result = HttpUtils.executeHttpWithStatus(client, getMethod, bout);
             if (result < 200 || result >= 300) {
                 throw new RuntimeException("Upload failed. result:" + result);
             }
             if (hashCache != null) {
                 hashCache.setHash(hash);
             }
-            return getMethod.getResponseBody();
+            return bout.toByteArray();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -133,5 +139,5 @@ public class HttpBlobStore implements BlobStore {
 
     public long getSets() {
         return sets;
-    }
+    }   
 }

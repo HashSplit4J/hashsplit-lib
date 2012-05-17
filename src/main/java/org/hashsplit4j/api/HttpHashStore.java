@@ -3,9 +3,12 @@ package org.hashsplit4j.api;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.*;
-import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ByteArrayEntity;
 
 /**
  * Implements getting and setting fanout hashes over HTTP
@@ -42,7 +45,7 @@ public class HttpHashStore implements HashStore {
         }
         sets++;
         String s = baseUrl + hash;
-        PutMethod p = new PutMethod(s);
+        HttpPut p = new HttpPut(s);
 
         // Copy longs into a byte array
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -57,14 +60,11 @@ public class HttpHashStore implements HashStore {
         }
         byte[] hashes = bout.toByteArray();
 
-        HttpMethodParams params = new HttpMethodParams();
-        params.setSoTimeout(timeout);
-        p.setParams(params);
         try {
-            RequestEntity requestEntity = new ByteArrayRequestEntity(hashes);
+            HttpEntity requestEntity = new ByteArrayEntity(hashes);
 
-            p.setRequestEntity(requestEntity);
-            int result = client.executeMethod(p);
+            p.setEntity(requestEntity);
+            int result = HttpUtils.executeHttpWithStatus(client, p, null);
             if (result < 200 || result >= 300) {
                 throw new RuntimeException("Upload failed. result:" + result);
             }
@@ -74,8 +74,6 @@ public class HttpHashStore implements HashStore {
 
         } catch (IOException ex) {
             throw new RuntimeException(ex);
-        } finally {
-            p.releaseConnection();
         }
     }
 
@@ -83,14 +81,15 @@ public class HttpHashStore implements HashStore {
     public Fanout getFanout(long fanoutHash) {
         gets++;
         String s = baseUrl + fanoutHash;
-        GetMethod getMethod = new GetMethod(s);
+        HttpGet getMethod = new HttpGet(s);
         int result;
         try {
-            result = client.executeMethod(getMethod);
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            result = HttpUtils.executeHttpWithStatus(client, getMethod, bout);
             if (result < 200 || result >= 300) {
                 throw new RuntimeException("Download failed. result:" + result + " url: " + s);
             }
-            byte[] arr = getMethod.getResponseBody();
+            byte[] arr = bout.toByteArray();
             ByteArrayInputStream bin = new ByteArrayInputStream(arr);
             List<Long> list = new ArrayList<Long>();
             DataInputStream din = new DataInputStream(bin);
@@ -121,10 +120,10 @@ public class HttpHashStore implements HashStore {
             }
         }
         String s = baseUrl + fanoutHash;
-        OptionsMethod opts = new OptionsMethod(s);
+        HttpOptions opts = new HttpOptions(s);
         int result;
         try {
-            result = client.executeMethod(opts);
+            result = HttpUtils.executeHttpWithStatus(client, opts, null);
             if (result >= 500) {
                 throw new RuntimeException("Server error: " + result);
             }
