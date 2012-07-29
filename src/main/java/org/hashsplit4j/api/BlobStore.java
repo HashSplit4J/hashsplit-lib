@@ -22,4 +22,5 @@ public interface BlobStore {
     byte[] getBlob(long hash);    
     
     boolean hasBlob(long hash);
+    
 }
