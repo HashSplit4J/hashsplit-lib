@@ -22,14 +22,14 @@ public class MultipleHashStore implements HashStore {
     }
 
     @Override
-    public void setFanout(long hash, List<Long> childCrcs, long actualContentLength) {
-        firstHashStore.setFanout(hash, childCrcs, actualContentLength);
+    public void setChunkFanout(String hash, List<String> childCrcs, long actualContentLength) {
+        firstHashStore.setChunkFanout(hash, childCrcs, actualContentLength);
     }
 
     @Override
-    public Fanout getFanout(long fanoutHash) {
+    public Fanout getChunkFanout(String fanoutHash) {
         for (HashStore store  : hashStores) {
-            Fanout fanout = store.getFanout(fanoutHash);
+            Fanout fanout = store.getChunkFanout(fanoutHash);
             if (fanout != null) {
                 return fanout;
             }
@@ -38,9 +38,35 @@ public class MultipleHashStore implements HashStore {
     }
 
     @Override
-    public boolean hasFanout(long fanoutHash) {
+    public boolean hasChunk(String fanoutHash) {
         for (HashStore store  : hashStores) {
-            if( store.hasFanout(fanoutHash) ) {
+            if( store.hasChunk(fanoutHash) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void setFileFanout(String hash, List<String> fanoutHashes, long actualContentLength) {
+        firstHashStore.setChunkFanout(hash, fanoutHashes, actualContentLength);
+    }
+
+    @Override
+    public Fanout getFileFanout(String fileHash) {
+        for (HashStore store  : hashStores) {
+            Fanout fanout = store.getFileFanout(fileHash);
+            if (fanout != null) {
+                return fanout;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean hasFile(String fileHash) {
+        for (HashStore store  : hashStores) {
+            if( store.hasChunk(fileHash) ) {
                 return true;
             }
         }

@@ -16,10 +16,10 @@ public class Combiner {
     int currentBlob = 0;
     int currentBlobByte;
 
-    public void combine(List<Long> megaCrcs, HashStore hashStore, BlobStore blobStore, OutputStream out) throws IOException {
-        for (Long fanoutHash : megaCrcs) {
-            Fanout fanout = hashStore.getFanout(fanoutHash);
-            for (Long hash : fanout.getHashes()) {
+    public void combine(List<String> fanoutHashes, HashStore hashStore, BlobStore blobStore, OutputStream out) throws IOException {
+        for (String fanoutHash : fanoutHashes) {
+            Fanout fanout = hashStore.getChunkFanout(fanoutHash);
+            for (String hash : fanout.getHashes()) {
                 byte[] arr = blobStore.getBlob(hash);
                 if (arr == null) {
                     throw new RuntimeException("Failed to lookup blob: " + hash);
@@ -30,20 +30,23 @@ public class Combiner {
 
     }
 
-    public void combine(List<Long> megaCrcs, HashStore hashStore, BlobStore blobStore, OutputStream out, long start, Long finish) throws IOException {
+    public void combine(List<String> megaCrcs, HashStore hashStore, BlobStore blobStore, OutputStream out, long start, Long finish) throws IOException {
         seek(start, megaCrcs, hashStore, blobStore);
         writeToFinish(finish, megaCrcs, hashStore, blobStore, out);
     }
 
-    private void seek(long start, List<Long> megaCrcs, HashStore hashStore, BlobStore blobStore) {
+    private void seek(long start, List<String> megaCrcs, HashStore hashStore, BlobStore blobStore) {
         while (currentFanout < megaCrcs.size()) {
-            long fanoutHash = megaCrcs.get(currentFanout);
-            Fanout fanout = hashStore.getFanout(fanoutHash);
+            String fanoutHash = megaCrcs.get(currentFanout);
+            Fanout fanout = hashStore.getChunkFanout(fanoutHash);
             long fanoutEnd = currentByte + fanout.getActualContentLength();
             if (fanoutEnd >= start) {
                 while (currentBlob < fanout.getHashes().size()) {
-                    long blobHash = fanout.getHashes().get(currentBlob);
+                    String blobHash = fanout.getHashes().get(currentBlob);
                     byte[] arr = blobStore.getBlob(blobHash);
+                    if( arr == null ) {
+                        throw new RuntimeException("Failed to find blob in fanout. Blob hash: " + blobHash);
+                    }
                     if( currentByte + arr.length >= start) { // if end is after beginning of range, then this is the blob we want
                         currentBlobByte = (int) (start - currentByte);
                         currentByte += currentBlobByte;
@@ -60,34 +63,17 @@ public class Combiner {
         }
     }
 
-//    private void writeAll(List<Long> megaCrcs, HashStore hashStore, BlobStore blobStore, OutputStream out) throws IOException {
-//        while (currentFanout < megaCrcs.size()) {
-//            Long fanoutHash = megaCrcs.get(currentFanout);
-//            Fanout fanout = hashStore.getFanout(fanoutHash);
-//            while (currentBlob < fanout.getHashes().size()) {
-//                long hash = fanout.getHashes().get(currentBlob);
-//                byte[] arr = blobStore.getBlob(hash);
-//                if (currentBlobByte > 0) { // we might be part way through a blob
-//                    while (currentBlobByte < arr.length) {
-//                        byte b = arr[currentBlobByte];
-//                        out.write(b);
-//                    }
-//                } else {
-//                    out.write(arr);
-//                }
-//                currentBlobByte = 0;
-//            }
-//            currentBlob = 0;
-//        }
-//    }
 
-    private void writeToFinish(Long finish, List<Long> megaCrcs, HashStore hashStore, BlobStore blobStore, OutputStream out) throws IOException {
+    private void writeToFinish(Long finish, List<String> megaCrcs, HashStore hashStore, BlobStore blobStore, OutputStream out) throws IOException {
         while (currentFanout < megaCrcs.size() && (finish == null || currentByte < finish )) {
-            Long fanoutHash = megaCrcs.get(currentFanout);
-            Fanout fanout = hashStore.getFanout(fanoutHash);
+            String fanoutHash = megaCrcs.get(currentFanout);
+            Fanout fanout = hashStore.getChunkFanout(fanoutHash);
             while (currentBlob < fanout.getHashes().size() && (finish == null || currentByte < finish )) {
-                long hash = fanout.getHashes().get(currentBlob);
+                String hash = fanout.getHashes().get(currentBlob);
                 byte[] arr = blobStore.getBlob(hash);
+                if( arr == null ) {
+                    throw new RuntimeException("Couldnt locate blob: " + hash);
+                }
                 int numBytes;
                 if( finish == null || currentByte + arr.length < finish) {
                    // write all remaining bytes
@@ -103,5 +89,5 @@ public class Combiner {
             currentFanout++;
             currentBlob = 0;
         }
-    }
+    }    
 }

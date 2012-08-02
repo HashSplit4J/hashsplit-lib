@@ -19,11 +19,11 @@ public class MultipleBlobStore implements BlobStore {
     }
 
     @Override
-    public void setBlob(long hash, byte[] bytes) {
+    public void setBlob(String hash, byte[] bytes) {
     }
 
     @Override
-    public boolean hasBlob(long hash) {
+    public boolean hasBlob(String hash) {
         for (BlobStore store : stores) {
             if (store.hasBlob(hash)) {
                 return true;
@@ -33,7 +33,7 @@ public class MultipleBlobStore implements BlobStore {
     }
 
     @Override
-    public byte[] getBlob(long hash) {
+    public byte[] getBlob(String hash) {
         for (BlobStore store : stores) {
             byte[] arr = store.getBlob(hash);
             if( arr != null ) {

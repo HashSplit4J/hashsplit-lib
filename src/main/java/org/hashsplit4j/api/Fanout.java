@@ -13,5 +13,5 @@ import java.util.List;
  */
 public interface Fanout {
     long getActualContentLength();
-    List<Long> getHashes();
+    List<String> getHashes();
 }

@@ -7,13 +7,13 @@ import java.util.List;
  * @author brad
  */
 public class FanoutImpl implements Fanout{
-    private List<Long> hashes;
+    private List<String> hashes;
     private long actualContentLength;
 
     public FanoutImpl() {
     }
 
-    public FanoutImpl(List<Long> hashes, long actualContentLength) {
+    public FanoutImpl(List<String> hashes, long actualContentLength) {
         this.hashes = hashes;
         this.actualContentLength = actualContentLength;
     }
@@ -30,11 +30,11 @@ public class FanoutImpl implements Fanout{
     }
 
     @Override
-    public List<Long> getHashes() {
+    public List<String> getHashes() {
         return hashes;
     }
 
-    public void setHashes(List<Long> hashes) {
+    public void setHashes(List<String> hashes) {
         this.hashes = hashes;
     }        
 }

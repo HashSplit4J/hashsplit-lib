@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>hashsplit4j</groupId>
     <artifactId>hashsplit4j-lib</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>2.0.0</version>
     <packaging>jar</packaging>
     <name>hashsplit4j-lib</name>
     <distributionManagement>
@@ -46,6 +46,12 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.5</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
     <build>

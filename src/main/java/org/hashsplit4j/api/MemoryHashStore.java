@@ -12,27 +12,44 @@ import java.util.Map;
  */
 public class MemoryHashStore implements HashStore{
     
-    private Map<Long,Fanout> mapOfFanouts = new HashMap<Long,Fanout>(); // keyed by the crc of the fanout chunk, gives a list of chunk crc's
+    private Map<String,Fanout> mapOfChunkFanouts = new HashMap<String,Fanout>(); // keyed by the crc of the fanout chunk, gives a list of chunk crc's
     
+    private Map<String,Fanout> mapOfFileFanouts = new HashMap<String,Fanout>(); // keyed by the crc of the fanout chunk, gives a list of chunk crc's
     
     @Override
-    public void setFanout(long crc, List<Long> childCrcs, long actualContentLength) {
-        //System.out.println("Fanout: " + crc + " child crcs: " + childCrcs.size());
+    public void setChunkFanout(String crc, List<String> childCrcs, long actualContentLength) {
         Fanout fanout = new FanoutImpl(childCrcs, actualContentLength);
-        mapOfFanouts.put(crc, fanout);
+        mapOfChunkFanouts.put(crc, fanout);
     }
 
     @Override
-    public Fanout getFanout(long fanoutCrc) {
-        return mapOfFanouts.get(fanoutCrc);
+    public Fanout getChunkFanout(String fanoutCrc) {
+        return mapOfChunkFanouts.get(fanoutCrc);
     }
     
     public long getNumFanouts() {
-        return mapOfFanouts.size();
+        return mapOfChunkFanouts.size();
     }
 
     @Override
-    public boolean hasFanout(long fanoutHash) {
-        return getFanout(fanoutHash) != null;
+    public boolean hasChunk(String fanoutHash) {
+        return getChunkFanout(fanoutHash) != null;
+    }
+
+    @Override
+    public void setFileFanout(String hash, List<String> fanoutHashes, long actualContentLength) {
+        Fanout fanout = new FanoutImpl(fanoutHashes, actualContentLength);
+        mapOfFileFanouts.put(hash, fanout);
+
+    }
+
+    @Override
+    public Fanout getFileFanout(String fileHash) {
+        return mapOfFileFanouts.get(fileHash);
+    }
+
+    @Override
+    public boolean hasFile(String fileHash) {
+        return getFileFanout(fileHash) != null;
     }
 }

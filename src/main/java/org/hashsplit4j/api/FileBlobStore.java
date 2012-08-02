@@ -1,6 +1,7 @@
 package org.hashsplit4j.api;
 
 import java.io.*;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.CRC32;
@@ -25,7 +26,7 @@ public class FileBlobStore implements BlobStore {
      * @return
      * @throws IOException 
      */
-    public static byte[] readBytes(RandomAccessFile raf, long offset, int length, long expectedHash) throws IOException {
+    public static byte[] readBytes(RandomAccessFile raf, long offset, int length, String expectedHash) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();        
         raf.seek(offset);
         readBytes(raf, bout, length, expectedHash);
@@ -33,9 +34,9 @@ public class FileBlobStore implements BlobStore {
 
     }
 
-    private static void readBytes(RandomAccessFile raf, OutputStream bout, int length, long expectedHash) throws IOException {
+    private static void readBytes(RandomAccessFile raf, OutputStream bout, int length, String expectedHash) throws IOException {
         byte[] arr = new byte[length];
-        CRC32 blobCrc = new CRC32();
+        MessageDigest blobCrc = Parser.getCrypt();
         int s = raf.read(arr, 0, length);
         while (s > 0) {
             blobCrc.update(arr, 0, s);
@@ -43,13 +44,13 @@ public class FileBlobStore implements BlobStore {
             length = length - s; // read only up to remaining expected bytes
             s = raf.read(arr, 0, length);
         }
-        long actualCrc = blobCrc.getValue();
-        if( actualCrc != expectedHash ) {
+        String actualCrc = Parser.toHex(blobCrc);
+        if( !actualCrc.equals(expectedHash) ) {
             throw new RuntimeException("Actual CRC of blob does not match expected");
         }
     }    
     
-    private Map<Long, Chunk> mapOfChunks = new HashMap<Long, Chunk>();
+    private Map<String, Chunk> mapOfChunks = new HashMap<String, Chunk>();
     private final File file;
     private RandomAccessFile raf;
     private long totalSize;
@@ -59,7 +60,7 @@ public class FileBlobStore implements BlobStore {
     }
 
     @Override
-    public boolean hasBlob(long hash) {
+    public boolean hasBlob(String hash) {
         return mapOfChunks.containsKey(hash);
     }
 
@@ -68,7 +69,7 @@ public class FileBlobStore implements BlobStore {
     }
 
     @Override
-    public byte[] getBlob(long hash) {
+    public byte[] getBlob(String hash) {
         if (raf == null) {
             throw new IllegalStateException("File has not been opened, please call openForRead (and then close when finished!");
         }
@@ -86,7 +87,7 @@ public class FileBlobStore implements BlobStore {
     }
 
     @Override
-    public void setBlob(long crc, byte[] bytes) {
+    public void setBlob(String crc, byte[] bytes) {
         Chunk chunk = new Chunk();
         chunk.crc = crc;
         chunk.start = totalSize;
@@ -98,7 +99,7 @@ public class FileBlobStore implements BlobStore {
 
     public class Chunk {
 
-        long crc;
+        String crc;
         long start;
         int length;
     }
