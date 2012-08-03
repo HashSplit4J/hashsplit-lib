@@ -8,7 +8,7 @@ package org.hashsplit4j.api;
  * @author brad
  */
 public interface HashCache {
-    boolean hasHash(final long hash);
+    boolean hasHash(final String hash);
     
-    void setHash(long hash);
+    void setHash(String hash);
 }

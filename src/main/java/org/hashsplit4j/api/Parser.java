@@ -25,7 +25,7 @@ import org.apache.commons.io.IOUtils;
  */
 public class Parser {
 
-    private static final int MASK = 0xFFF;  // average blob size of 64k
+    private static final int MASK = 0xFFFF;  // average blob size of 64k
     private static final int FANOUT_MASK = 0x7FFFFFF; // about 1024 hashes per fanout
 
     public static String parse(File f, BlobStore blobStore, HashStore hashStore) throws FileNotFoundException, IOException {

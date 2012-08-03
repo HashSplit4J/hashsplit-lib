@@ -11,6 +11,14 @@ import java.util.List;
  * fanout: a hash value to use as a grouping of chunks. The given hash is the
  * hash of all of the contained chunks
  *
+ * HashStore stores two types of fanouts - for files and chunks. A file fanout
+ * contains hashes which identify other fanouts, whereas a chunk fanout has
+ * hashes that identify blobs.
+ * 
+ * Note that a file might have a single fanout, in which case the file fanout
+ * will identify a single chunk fanout. Both will be the same hash, but will
+ * have different content. Its for this
+ * 
  * @author brad
  */
 public interface HashStore {
