@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The parser will take a stream of bytes and split it into chunks with an
@@ -25,6 +27,8 @@ import org.apache.commons.io.IOUtils;
  */
 public class Parser {
 
+    private static final Logger log = LoggerFactory.getLogger(Parser.class);
+    
     private static final int MASK = 0xFFFF;  // average blob size of 64k
     private static final int FANOUT_MASK = 0x7FFFFFF; // about 1024 hashes per fanout
 
@@ -41,6 +45,10 @@ public class Parser {
             IOUtils.closeQuietly(fin);
         }
     }
+    
+    
+    private boolean cancelled;
+    private long numBytes;
 
     /**
      * Returns a hex enccoded SHA1 hash of the whole file. This can be used to locate the
@@ -53,6 +61,7 @@ public class Parser {
      * @throws IOException
      */
     public String parse(InputStream in, HashStore hashStore, BlobStore blobStore) throws IOException {
+        log.info("parse. inputstream: " + in);
         Rsum rsum = new Rsum(128);
         int cnt = 0;
         int numBlocks = 0;
@@ -68,8 +77,13 @@ public class Parser {
         long fileLength = 0;
 
         int s = in.read(arr, 0, 1024);
+        log.trace("initial block size: " + s);
         List<String> fanoutHashes = new ArrayList<String>();
         while (s >= 0) {
+            numBytes += s;
+            if( cancelled ) {
+                throw new IOException("operation cancelled");
+            }
             for (int i = 0; i < s; i++) {
                 byte b = arr[i];
                 rsum.roll(b);
@@ -93,7 +107,9 @@ public class Parser {
                     if ((x & FANOUT_MASK) == FANOUT_MASK) {
                         String fanoutCrcVal = toHex(fanoutCrc);
                         fanoutHashes.add(fanoutCrcVal);
-                        System.out.println("fanout: " + fanoutCrcVal);
+                        if(log.isTraceEnabled()) {
+                            log.trace("set fanout: " + fanoutCrcVal + " length=" + fanoutLength);
+                        }
                         hashStore.setChunkFanout(fanoutCrcVal, blobHashes, fanoutLength);
                         fanoutLength = 0;
                         fanoutCrc.reset();
@@ -104,7 +120,7 @@ public class Parser {
                 }
             }
 
-            s = in.read(arr, 0, 1024);
+            s = in.read(arr, 0, 1024);            
         }
         // Need to store terminal data, ie data which has been accumulated since the last boundary
         String blobCrcHex = toHex(blobCrc);
@@ -112,11 +128,15 @@ public class Parser {
         blobStore.setBlob(blobCrcHex, bout.toByteArray());
         blobHashes.add(blobCrcHex);
         String fanoutCrcVal = toHex(fanoutCrc);        
+        if(log.isTraceEnabled()) {
+            log.trace("set terminal fanout: " + fanoutCrcVal + " length=" + fanoutLength);
+        }
         hashStore.setChunkFanout(fanoutCrcVal, blobHashes, fanoutLength);
         fanoutHashes.add(fanoutCrcVal);
 
         // Now store a fanout for the whole file. The contained hashes locate other fanouts
         String fileCrcVal = toHex(fileCrc);
+        log.info("set file fanout: " + fanoutCrcVal + "  length=" + fileLength);
         hashStore.setFileFanout(fileCrcVal, fanoutHashes, fileLength);
         return fileCrcVal;
     }
@@ -135,4 +155,18 @@ public class Parser {
         String hash = DigestUtils.shaHex(crypt.digest());
         return hash;
     }
+
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
+    public long getNumBytes() {
+        return numBytes;
+    }
+    
+    
 }
