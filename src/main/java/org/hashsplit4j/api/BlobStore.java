@@ -15,7 +15,7 @@ public interface BlobStore {
      * Called whenever we find a chunk boundary.
      * 
      * @param hash - the hex encoded form of the blob SHA1 hash
-     * @param blob  - bytes in the blob (where bytes are within each integer)
+     * @param bytes
      */
     void setBlob(String hash, byte[] bytes);    
     
