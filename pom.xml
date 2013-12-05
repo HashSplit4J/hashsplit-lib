@@ -64,6 +64,11 @@
             <version>1.5</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+		      <groupId>com.sleepycat</groupId>
+		      <artifactId>je</artifactId>
+		      <version>5.0.73</version>
+		    </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -79,10 +84,16 @@
         </plugins>
     </build>
     <repositories>
-        <repository>
-            <id>ettrema-repo</id>
-            <url>http://www.ettrema.com/maven2</url>
-        </repository>
-    </repositories>    
+			<repository>
+				<id>ettrema-repo</id>
+				<url>http://www.ettrema.com/maven2</url>
+			</repository>
+			<repository>
+				<id>oracleReleases</id>
+				<name>Oracle Released Java Packages</name>
+				<url>http://download.oracle.com/maven</url>
+				<layout>default</layout>
+			</repository>
+		</repositories>    
 </project>
 
