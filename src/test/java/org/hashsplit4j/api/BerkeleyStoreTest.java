@@ -39,8 +39,6 @@ public class BerkeleyStoreTest {
   
   File dbDir;
   
-  String dbName;
-  
   long cacheSize = 20 * 1024 * 1024;
   
   /**
@@ -48,10 +46,9 @@ public class BerkeleyStoreTest {
    */
   @Before
   public void setUp() throws Exception {
-    dbDir = new File("data");
-    dbName = "brad"; // database name like 'brad' or 'mysql_store', ....
+    dbDir = new File("target/data");
     
-    berkeleyStore = new BerkeleyStore(dbDir, dbName, cacheSize);
+    berkeleyStore = new BerkeleyStore(dbDir, cacheSize);
   }
 
   @Test

@@ -63,7 +63,6 @@
             <artifactId>commons-codec</artifactId>
             <version>1.5</version>
             <type>jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
 		      <groupId>com.sleepycat</groupId>

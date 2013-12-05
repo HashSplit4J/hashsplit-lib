@@ -23,17 +23,11 @@ public class BerkeleyStore implements BlobStore {
    * Default folder for stored files
    */
   private final File dbDir;
-
-  /**
-   * String used to identify the database
-   */
-  private final String dbName;
   
   private final long cacheSize;
   
-  public BerkeleyStore(File dbDir, String dbName, long cacheSize) {
+  public BerkeleyStore(File dbDir, long cacheSize) {
     this.dbDir = dbDir;
-    this.dbName = dbName;
     this.cacheSize = cacheSize;
     this.env = createDBEnvironment();
     this.db = openDatabase();
@@ -102,6 +96,6 @@ public class BerkeleyStore implements BlobStore {
     dbCfg.setAllowCreate(true);
     dbCfg.setSortedDuplicates(false);
     dbCfg.setOverrideDuplicateComparator(false);
-    return env.openDatabase(null, dbName, dbCfg);
+    return env.openDatabase(null, "", dbCfg);
   }
 }
