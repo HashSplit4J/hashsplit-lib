@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.After;
@@ -35,7 +36,7 @@ public class BerkeleyDbBlobStoreTest {
 
     Charset CHARSET_UTF = Charset.forName("UTF-8");
 
-    BerkeleyDbBlobStore berkeleyStore;
+    BerkeleyDbBlobStore blobStore;
 
     File dbDir;
 
@@ -48,12 +49,12 @@ public class BerkeleyDbBlobStoreTest {
     public void setUp() throws Exception {
         dbDir = new File("target/data");
 
-        berkeleyStore = new BerkeleyDbBlobStore(dbDir, cacheSize);
+        blobStore = new BerkeleyDbBlobStore(dbDir, cacheSize);
     }
 
     @After
     public void tearDown() {
-        berkeleyStore.close();
+        blobStore.close();
         for( File f : dbDir.listFiles() ) {
             if( !f.delete() ) {
                 System.out.println("Couldnt delete: " + f.getAbsolutePath());
@@ -70,7 +71,7 @@ public class BerkeleyDbBlobStoreTest {
         for (int j = 10000; j >= 0; j--) {
             String data = String.valueOf(j);
 
-            berkeleyStore.setBlob(DigestUtils.shaHex(data), data.getBytes(CHARSET_UTF));
+            blobStore.setBlob(DigestUtils.shaHex(data), data.getBytes(CHARSET_UTF));
         }
     }
 
@@ -78,15 +79,15 @@ public class BerkeleyDbBlobStoreTest {
     public void testSetBlobWithDuplicate() {
         String origData = "1";
         String key = DigestUtils.shaHex("1");
-        berkeleyStore.setBlob(key, origData.getBytes(CHARSET_UTF));
+        blobStore.setBlob(key, origData.getBytes(CHARSET_UTF));
         
         String newData = "Oracle Berkeley DB Java Edition";
 
         // Try to overwrite the entity {key: "1", value: "Oracle Berkeley DB Java Edition"}
-        berkeleyStore.setBlob(key, newData.getBytes(CHARSET_UTF));
+        blobStore.setBlob(key, newData.getBytes(CHARSET_UTF));
 
         // The berkeley should keep original data like this entity {key: "1", value: "1"}
-        String expResult = new String(berkeleyStore.getBlob(key), CHARSET_UTF);
+        String expResult = new String(blobStore.getBlob(key), CHARSET_UTF);
 
         assertEquals("1", expResult);
     }
@@ -96,9 +97,9 @@ public class BerkeleyDbBlobStoreTest {
         String actualData = "10000";
         String key = DigestUtils.shaHex(actualData);
         
-        berkeleyStore.setBlob(key, actualData.getBytes(CHARSET_UTF));
+        blobStore.setBlob(key, actualData.getBytes(CHARSET_UTF));
         
-        byte[] data = berkeleyStore.getBlob(key);
+        byte[] data = blobStore.getBlob(key);
         assertNotNull(data);
         String expData = new String(data, CHARSET_UTF);
 
@@ -111,9 +112,9 @@ public class BerkeleyDbBlobStoreTest {
     @Test
     public void testHasBlobWithExist() {
         String key = DigestUtils.shaHex("10");
-        berkeleyStore.setBlob(key, "XXX".getBytes(CHARSET_UTF));
+        blobStore.setBlob(key, "XXX".getBytes(CHARSET_UTF));
         // Found a Blob
-        assertTrue(berkeleyStore.hasBlob(key));
+        assertTrue(blobStore.hasBlob(key));
     }
 
     /**
@@ -124,6 +125,77 @@ public class BerkeleyDbBlobStoreTest {
         String key = DigestUtils.shaHex("20000");
 
         // Not found a Blob
-        assertFalse(berkeleyStore.hasBlob(key));
+        assertFalse(blobStore.hasBlob(key));
     }
+    
+    @Test
+    public void testGroupCreation() {
+        System.out.println("testSetBlobCreatesGroup");
+        String data = "20000";
+        byte[] bytes = data.getBytes(CHARSET_UTF);
+        String key = "352bc7d47decfa6b5052a0dd871ef73d6a91c7de";
+        System.out.println("key: " + key);
+        String rootGroupName = key.substring(0, 3);
+        String subGroupName = key.substring(0, 6);
+        System.out.println("rootGroupName: " + rootGroupName);
+        System.out.println("subGroupName: " + subGroupName);
+        // Check the group is not present
+        List<BerkeleyDbBlobStore.HashGroup> rootGroups = blobStore.getRootGroups();
+        assertTrue(rootGroups == null || rootGroups.isEmpty());
+        
+        // ok, nothing in there, lets do an insert and check for one group
+        blobStore.setBlob(key, bytes);
+        
+        // Should not have generated any hash groups yet
+        rootGroups = blobStore.getRootGroups();
+        assertEquals(0, rootGroups.size()); // should be NO root gruops yet
+        
+        // Lets generate the hash groups
+        blobStore.generateHashes();
+
+        // OK, there should now be a root group corresponding to rootGroupName above
+        rootGroups = blobStore.getRootGroups();
+        assertEquals(1, rootGroups.size()); // should be 1 root group
+        assertEquals(rootGroupName, rootGroups.get(0).getName()); // the name of that group should be first 3 chars of the key
+        
+        // Now lets drill down, should be a single subgroup for that rootgroup
+        List<BerkeleyDbBlobStore.HashGroup> subGroups = blobStore.getSubGroups(rootGroupName);
+        assertNotNull(subGroups);
+        assertEquals(1, subGroups.size()); // should be one entry
+        assertEquals(subGroupName, subGroups.get(0).getName()); // the name of this group should be the subgroup name, ie first 6 chars
+        
+        // Now we have a subgroup, we can load blobs for that group
+        List<String> blobHashes = blobStore.getBlobHashes(subGroupName);
+        assertNotNull(blobHashes);
+        assertEquals(1, blobHashes.size()); // should be one entry
+        String actualBlobHash = blobHashes.get(0);
+        assertEquals(key, actualBlobHash);               
+    }
+    
+    @Test
+    public void testSetBlobRemovesGroup() {
+        // Insert a blob and generate hash groups. Then insert another blob with same root group and ensure
+        // the root group gets deleted
+        String data = "20000";
+        byte[] bytes = data.getBytes(CHARSET_UTF);
+        String key1 = "352bc7d47decfa6b5052a0dd871ef73d6a91c7de";
+        String key2 = "352000007decfa6b5052a0dd871ef73d6a91c7de";
+        
+        blobStore.setBlob(key1, bytes);
+        blobStore.generateHashes();
+        List<BerkeleyDbBlobStore.HashGroup> rootGroups = blobStore.getRootGroups();
+        assertEquals(1, rootGroups.size());
+        
+        // Now insert a blob with a matching root group name. This should delete that root group
+        // because the original root group is no longer valid
+        blobStore.setBlob(key2, bytes);
+        rootGroups = blobStore.getRootGroups();
+        assertEquals(0, rootGroups.size());
+        
+        // Now generate
+        blobStore.generateHashes();
+        
+        rootGroups = blobStore.getRootGroups();
+        assertEquals(1, rootGroups.size());
+    }    
 }

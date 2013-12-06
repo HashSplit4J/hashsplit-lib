@@ -26,6 +26,7 @@ import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.LockMode;
+import java.util.List;
 
 public class BerkeleyDbBlobStore implements BlobStore {
 
@@ -118,5 +119,97 @@ public class BerkeleyDbBlobStore implements BlobStore {
         dbCfg.setSortedDuplicates(false);
         dbCfg.setOverrideDuplicateComparator(false);
         return env.openDatabase(null, "", dbCfg);
+    }
+    
+    /**
+     * Create any missing hashes for blobs and groups. Note that it is assumed
+     * that any group insertions will have deleted group items 
+     * 
+     * @return 
+     */
+    public void generateHashes() {
+        
+    }
+    
+    /**
+     * Get the group hashes for the initial hash prefix (ie first 3 chars). Return
+     * only those currently persisted ie do not dynamically generate any missing hashes
+     * 
+     * @return 
+     */
+    public List<HashGroup> getRootGroups() {
+        return null;
+    }
+    
+    /**
+     * Get the hash groups for the given root group
+     * 
+     * @param parent
+     * @return 
+     */
+    public List<HashGroup> getSubGroups(String parent) {
+        return null;
+    }
+    
+    /**
+     * Get the blob hashes for the sub group name
+     * 
+     * @param subGroupName
+     * @return 
+     */
+    public List<String> getBlobHashes(String subGroupName) {
+        return null;
+    }
+    
+    /**
+     * Represents a hash prefix (ie the first n digits) common to a list
+     * of hashes, and the hash of the text formed by those hashes.
+     * 
+     * For example, assume the following hashes were inserted into the blobstore:
+     *  0123456
+     *  012345c
+     *  0125432
+     *  cce2345
+     *  cceeeee
+     *  
+     *  Then, assuming n=3, there will be 2 root groups - 012 and cce.
+     * 
+     *  The 012 group would contain 2 groups - 012345 and 012543
+     * 
+     *  This forms a hierarchy as follows:
+     *  root (the blobstore itself)
+     *    - first level groups
+     *      - second level groups
+     *        - actual blobs
+     * 
+     *  The BlobStore itself and each group has a hash. The hash is formed by concentating
+     *  its children in the hierarchy above with their hashes in this form:
+     *  
+     *  {name},{hash}
+     *  
+     *  Where the name is the name of the group, and the hash is the hash of this group
+     * 
+     *  Note that if a hash exists it is assumed to be accurate. This means that
+     *  hashes must either be deleted or recalculated when new blobs are inserted
+     *  It will often be inefficient to recalculate hashes on every insertion, and 
+     *  would be unnecessary because syncs are only occasional, so instead we assume
+     *  they will only be recaculated on demand.
+     */
+    public class HashGroup {
+        private final String name;
+        private final String contentHash;
+
+        public HashGroup(String name, String contentHash) {
+            this.name = name;
+            this.contentHash = contentHash;
+        }
+
+        public String getContentHash() {
+            return contentHash;
+        }
+
+        public String getName() {
+            return name;
+        }        
     }
 }
