@@ -73,6 +73,8 @@ public class BerkeleyDbBlobStoreTest {
 
             blobStore.setBlob(DigestUtils.shaHex(data), data.getBytes(CHARSET_UTF));
         }
+        
+        blobStore.getRootGroups();
     }
 
     @Test
@@ -148,7 +150,7 @@ public class BerkeleyDbBlobStoreTest {
         
         // Should not have generated any hash groups yet
         rootGroups = blobStore.getRootGroups();
-        assertEquals(0, rootGroups.size()); // should be NO root gruops yet
+        assertEquals(0, rootGroups.size()); // should be NO root groups yet
         
         // Lets generate the hash groups
         blobStore.generateHashes();

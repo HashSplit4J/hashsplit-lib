@@ -19,13 +19,18 @@ package org.hashsplit4j.api;
 import java.io.File;
 import java.nio.charset.Charset;
 
+import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.LockMode;
+import com.sleepycat.je.OperationStatus;
+
+import java.util.Collections;
 import java.util.List;
 
 public class BerkeleyDbBlobStore implements BlobStore {
@@ -64,7 +69,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
     @Override
     public byte[] getBlob(String hash) {
         if (hash == null) {
-            throw new RuntimeException("Key can not be null for setBlob() function");
+            throw new RuntimeException("Key can not be null for getBlob() function");
         }
 
         DatabaseEntry search = new DatabaseEntry();
@@ -131,6 +136,8 @@ public class BerkeleyDbBlobStore implements BlobStore {
         
     }
     
+    private Cursor cursor = null;
+    
     /**
      * Get the group hashes for the initial hash prefix (ie first 3 chars). Return
      * only those currently persisted ie do not dynamically generate any missing hashes
@@ -138,7 +145,25 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return 
      */
     public List<HashGroup> getRootGroups() {
-        return null;
+        List<HashGroup> hashes = Collections.emptyList();
+        cursor = db.openCursor(null, null);
+        
+        try {
+            DatabaseEntry fndKey = new DatabaseEntry();
+            DatabaseEntry fndData = new DatabaseEntry();
+            while (cursor.getNext(fndKey, fndData, LockMode.DEFAULT) == OperationStatus.SUCCESS) {
+                String key = new String(fndKey.getData(), CHARSET_UTF);
+                String data = new String(fndData.getData(), CHARSET_UTF);
+//                System.out.println("Key | Data : " + key + " | " +  data + "");
+                
+            }
+        } catch (DatabaseException de) {
+            System.err.println("Error accessing database." + de);
+        } finally {
+            cursor.close();
+        }
+        
+        return hashes;
     }
     
     /**
