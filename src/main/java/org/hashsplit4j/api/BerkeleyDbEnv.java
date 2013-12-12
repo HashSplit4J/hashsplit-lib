@@ -27,30 +27,38 @@ import com.sleepycat.persist.StoreConfig;
 public class BerkeleyDbEnv {
 
     private Environment env;
-    
+
     private EntityStore store;
-    
+
     // Our constructor does nothing
-    public BerkeleyDbEnv() {}
-    
+    public BerkeleyDbEnv() {
+    }
+
+    /**
+     * Setup a Berkeley DB engine environment, and preload some blob records
+     * 
+     * @param envHome
+     * @param readOnly
+     * @throws DatabaseException
+     */
     public void openEnv(File envHome, boolean readOnly) throws DatabaseException {
         if (!envHome.exists()) {
             if (!envHome.mkdirs()) {
                 throw new RuntimeException("The directory " + envHome + " does not exist.");
             }
         }
-        
+
         EnvironmentConfig envConfig = new EnvironmentConfig();
         StoreConfig storeConfig = new StoreConfig();
         envConfig.setReadOnly(readOnly);
         storeConfig.setReadOnly(readOnly);
 
-        // If the environment is opened for write, then we want to be 
-        // able to create the environment and entity store if 
+        // If the environment is opened for write, then we want to be
+        // able to create the environment and entity store if
         // they do not exist.
         envConfig.setAllowCreate(!readOnly);
         storeConfig.setAllowCreate(!readOnly);
-        
+
         // Open the environment and entity store
         env = new Environment(envHome, envConfig);
         store = new EntityStore(env, "", storeConfig);
@@ -93,6 +101,25 @@ public class BerkeleyDbEnv {
             } catch (DatabaseException dbe) {
                 System.err.println("Error closing environment " + dbe.getMessage());
             }
+        }
+    }
+    
+    /**
+     * Remove Berkeley DB File
+     * 
+     * @param envHome
+     */
+    public void removeDbFiles(File envHome) {
+        if (envHome.isDirectory()) {
+            for(File f : envHome.listFiles()) {
+                if( !f.delete() ) {
+                    System.err.println("Couldnt delete: " + f.getAbsolutePath());
+                }
+            }
+        }
+        
+        if (!envHome.delete()) {
+            System.err.println("Failed to delete db directory");
         }
     }
 }

@@ -23,51 +23,52 @@ import com.sleepycat.persist.model.PrimaryKey;
 import com.sleepycat.persist.model.SecondaryKey;
 
 /**
- * Blob entity is used for storage in the Berkeley DB
- *        e.g: Blob {"e111885f8b7797884299e513ace4b8174a6e25fa", "e11", 
- *                        "e11188", "Oracle Berkeley DB Java Edition"}
- *                        
+ * The Blob entity class is used for storage in the Berkeley DB e.g: 
+ *      Blob {"e111885f8b7797884299e513ace4b8174a6e25fa", "e11", 
+ *                  "e11188", "Oracle Berkeley DB Java Edition"}
+ * 
  * @version Blob.java Dec 11, 2013
  */
 @Entity
 public class Blob {
 
-  @PrimaryKey
-  private String hash;
-  
-  @SecondaryKey(relate=MANY_TO_ONE)
-  private String group;
-  
-  @SecondaryKey(relate=MANY_TO_ONE)
-  private String subGroup;
-  
-  private String contents;
+    @PrimaryKey
+    private String hash;
 
-  /**
-   * For deserialization
-   */
-  private Blob() {}
+    @SecondaryKey(relate = MANY_TO_ONE)
+    private String group;
 
-  public Blob(String hash, String group, String subGroup, String contents) {
-    this.hash = hash;
-    this.group = group;
-    this.subGroup = subGroup;
-    this.contents = contents;
-  }
+    @SecondaryKey(relate = MANY_TO_ONE)
+    private String subGroup;
 
-  public String getHash() {
-    return hash;
-  }
+    private String contents;
 
-  public String getGroup() {
-    return group;
-  }
-  
-  public String getSubGroup() {
-    return subGroup;
-  }
+    /**
+     * Needed for deserialization
+     */
+    private Blob() {
+    }
 
-  public String getContents() {
-    return contents;
-  }
+    public Blob(String hash, String group, String subGroup, String contents) {
+        this.hash = hash;
+        this.group = group;
+        this.subGroup = subGroup;
+        this.contents = contents;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public String getSubGroup() {
+        return subGroup;
+    }
+
+    public String getContents() {
+        return contents;
+    }
 }

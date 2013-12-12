@@ -34,9 +34,9 @@ public class BerkeleyDbBlobStore implements BlobStore {
 
     private final int nPrefGroup;
     private final int nPrefSubGroup;
-    
+
     private BerkeleyDbAccessor dbAccessor;
-    
+
     // Encapsulates the environment and data store.
     private BerkeleyDbEnv dbEnv = new BerkeleyDbEnv();
 
@@ -46,7 +46,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
 
         dbEnv.openEnv(envHome,  // path to the environment home
                 false);         // Environment read-only?
-        
+
         // Open the data accessor. This is used to retrieve
         // persistent objects.
         dbAccessor = new BerkeleyDbAccessor(dbEnv.getEntityStore());
@@ -59,17 +59,13 @@ public class BerkeleyDbBlobStore implements BlobStore {
         }
 
         String group = hash.substring(0, nPrefGroup);
-        Blob blob = new Blob(hash, group, hash.substring(0, nPrefSubGroup), 
-            new String(bytes, CHARSET_UTF));
         // Put it in the store. Note that this causes our secondary key
         // to be automatically updated for us.
-        dbAccessor.getBlobByIndex().putNoOverwrite(blob);
+        dbAccessor.getBlobByIndex().putNoOverwrite(new Blob(hash, group, 
+                hash.substring(0, nPrefSubGroup), new String(bytes, CHARSET_UTF)));
         
-        // This should delete that root group because the original root group is no longer valid
-        HashGroup hashGroup = dbAccessor.getHashGroupByIndex().get(group);
-        if (hashGroup != null) {
-            dbAccessor.getHashGroupByIndex().delete(group);
-        }
+        // So we should ensure that anything affected is removed
+        removeMissingHash(group);       
     }
 
     @Override
@@ -96,9 +92,13 @@ public class BerkeleyDbBlobStore implements BlobStore {
 
         return false;
     }
-    
+
     public void closeEnv() {
         dbEnv.closeEnv();
+    }
+    
+    public void removeDbFiles(File envHome) {
+        dbEnv.removeDbFiles(envHome);
     }
 
     /**
@@ -108,14 +108,14 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return
      */
     public void generateHashes() {
-        Map<String, List<Blob>> entities = getBlobs();
+        Map<String, List<Blob>> entities = getBlobByGroup();
         if (entities != null && !entities.isEmpty()) {
             String name = null;
             List<Blob> childrens = null;
             Iterator<Entry<String, List<Blob>>> iterator = entities.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry entry = (Map.Entry) iterator.next();
-                
+
                 // The name of the group, and the hash is the hash of this group
                 name = (String) entry.getKey();
                 childrens = (List<Blob>) entry.getValue();
@@ -134,15 +134,14 @@ public class BerkeleyDbBlobStore implements BlobStore {
      */
     public List<HashGroup> getRootGroups() {
         List<HashGroup> groups = new ArrayList<HashGroup>();
-        
         // Get a cursor that will walk every hash group object in the store
-        EntityCursor<HashGroup> entities = dbAccessor.getHashGroupByIndex().entities();
+        EntityCursor<HashGroup> entities = dbAccessor.getGroupByIndex().entities();
         try {
             Iterator<HashGroup> iterator = entities.iterator();
             if (iterator instanceof List) {
                 return (List<HashGroup>) iterator;
             }
-            
+
             if (iterator != null) {
                 while (iterator.hasNext()) {
                     groups.add(iterator.next());
@@ -163,16 +162,13 @@ public class BerkeleyDbBlobStore implements BlobStore {
     public List<HashGroup> getSubGroups(String parent) {
         List<HashGroup> groups = new ArrayList<HashGroup>();
         if (parent != null && parent.length() > 0) {
-            Map<String, List<Blob>> entities = getSubBlobs(parent);
+            Map<String, List<Blob>> entities = getBlobBySubGroup(parent);
             Iterator<Entry<String, List<Blob>>> iterator = entities.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry entry = (Map.Entry) iterator.next();
                 String name = (String) entry.getKey();
                 List<Blob> childrens = (List<Blob>) entry.getValue();
-                
-                // Hash Group
-                HashGroup group = new HashGroup(name, Crypt.toHexFromArray(childrens));
-                groups.add(group);
+                groups.add(new HashGroup(name, Crypt.toHexFromArray(childrens)));
             }
         }
         return groups;
@@ -206,7 +202,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return
      * @throws DatabaseException
      */
-    private Map<String, List<Blob>> getBlobs() throws DatabaseException {
+    private Map<String, List<Blob>> getBlobByGroup() throws DatabaseException {
         // Get a cursor that will walk every blob object in the store
         EntityCursor<Blob> entities = dbAccessor.getBlobByIndex().entities();
         Map<String, List<Blob>> map = new HashMap<String, List<Blob>>();
@@ -233,7 +229,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return
      * @throws DatabaseException
      */
-    private Map<String, List<Blob>> getSubBlobs(String parent) throws DatabaseException {
+    private Map<String, List<Blob>> getBlobBySubGroup(String parent) throws DatabaseException {
         // Use the group name secondary key to retrieve these objects
         EntityCursor<Blob> entities = dbAccessor.getBlobByGroup().subIndex(parent).entities();
         Map<String, List<Blob>> map = new HashMap<String, List<Blob>>();
@@ -243,7 +239,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
                 if (map.get(subGroup) == null) {
                     map.put(subGroup, new ArrayList<Blob>());
                 }
-                
+
                 map.get(subGroup).add(blob);
             }
         } finally {
@@ -264,7 +260,19 @@ public class BerkeleyDbBlobStore implements BlobStore {
     private void setGroupNoOverwrite(String name, List<Blob> childrens) {
         HashGroup hashGroup = new HashGroup(name, Crypt.toHexFromArray(childrens));
         if (hashGroup != null) {
-            dbAccessor.getHashGroupByIndex().putNoOverwrite(hashGroup);
+            dbAccessor.getGroupByIndex().putNoOverwrite(hashGroup);
+        }
+    }
+    
+    /**
+     * This should delete that root group because the original root group is
+     * no longer valid
+     * 
+     * @param hash
+     */
+    private void removeMissingHash(String group) {
+        if (dbAccessor.getGroupByIndex().get(group) != null) {
+            dbAccessor.getGroupByIndex().delete(group);
         }
     }
 }

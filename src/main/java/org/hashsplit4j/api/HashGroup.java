@@ -20,22 +20,26 @@ import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
 
 /**
- * Represents a hash prefix (ie the first n digits) common to a list of
- * hashes, and the hash of the text formed by those hashes.
+ * Represents a hash prefix (ie the first n digits) common to a list of hashes,
+ * and the hash of the text formed by those hashes.
  * 
- * For example, assume the following hashes were inserted into the
- * blobstore: 0123456 012345c 0125432 cce2345 cceeeee
+ * For example, assume the following hashes were inserted into the blobstore: 
+ *      0123456 
+ *      012345c 
+ *      0125432 
+ *      cce2345 
+ *      cceeeee
  * 
  * Then, assuming n=3, there will be 2 root groups - 012 and cce.
  * 
  * The 012 group would contain 2 groups - 012345 and 012543
  * 
- * This forms a hierarchy as follows: root (the blobstore itself) - first
- * level groups - second level groups - actual blobs
+ * This forms a hierarchy as follows: root (the blobstore itself) - first level
+ * groups - second level groups - actual blobs
  * 
  * The BlobStore itself and each group has a hash. The hash is formed by
- * concentrating its children in the hierarchy above with their hashes in
- * this form:
+ * concentrating its children in the hierarchy above with their hashes in this
+ * form:
  * 
  * {name},{hash}
  * 
@@ -43,33 +47,33 @@ import com.sleepycat.persist.model.PrimaryKey;
  * group
  * 
  * Note that if a hash exists it is assumed to be accurate. This means that
- * hashes must either be deleted or recalculated when new blobs are inserted
- * It will often be inefficient to recalculate hashes on every insertion,
- * and would be unnecessary because syncs are only occasional, so instead we
- * assume they will only be recaculated on demand.
+ * hashes must either be deleted or recalculated when new blobs are inserted It
+ * will often be inefficient to recalculate hashes on every insertion, and would
+ * be unnecessary because syncs are only occasional, so instead we assume they
+ * will only be recaculated on demand.
  */
 @Entity
 public class HashGroup {
 
-  @PrimaryKey
-  private String name;
-  private String contentHash;
-  
-  /**
-   * For deserialization
-   */
-  private HashGroup() {} // Scope should private
+    @PrimaryKey
+    private String name;
+    private String contentHash;
 
-  public HashGroup(String name, String contentHash) {
-    this.name = name;
-    this.contentHash = contentHash;
-  }
+    /**
+     * Needed for deserialization
+     */
+    private HashGroup() {} // Scope should private
 
-  public String getContentHash() {
-    return contentHash;
-  }
+    public HashGroup(String name, String contentHash) {
+        this.name = name;
+        this.contentHash = contentHash;
+    }
 
-  public String getName() {
-    return name;
-  }
+    public String getContentHash() {
+        return contentHash;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

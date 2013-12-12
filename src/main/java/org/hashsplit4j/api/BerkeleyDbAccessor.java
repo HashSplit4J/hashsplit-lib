@@ -21,18 +21,24 @@ import com.sleepycat.persist.EntityStore;
 import com.sleepycat.persist.PrimaryIndex;
 import com.sleepycat.persist.SecondaryIndex;
 
+/**
+ * The data accessor class for the entity model
+ * 
+ * @author <a href="mailto:sondn@exoplatform.com">Ngoc Son Dang</a>
+ * @version BerkeleyDbAccessor.java Dec 12, 2013
+ */
 public class BerkeleyDbAccessor {
   
     private static final String GROUP_SECONDARY_INDEX = "group";
     private static final String SUBGROUP_SECONDARY_INDEX = "subGroup";
-    
+
     // Blob Accessors
-    PrimaryIndex<String, Blob> blobByIndex;
-    SecondaryIndex<String, String, Blob> blobByGroup;
-    SecondaryIndex<String, String, Blob> blobBySubGroup;
-    
+    private PrimaryIndex<String, Blob> blobByIndex;
+    private SecondaryIndex<String, String, Blob> blobByGroup;
+    private SecondaryIndex<String, String, Blob> blobBySubGroup;
+
     // Hash Group Accessors
-    PrimaryIndex<String, HashGroup> hashGroupByIndex;
+    private PrimaryIndex<String, HashGroup> groupByIndex;
 
     /**
      * Open the indices
@@ -46,27 +52,27 @@ public class BerkeleyDbAccessor {
         // Last field in the getSecondaryIndex() method must be
         // the name of a class member; in this case, an Blob.class
         // data member.
-        blobByGroup = store.getSecondaryIndex(blobByIndex, String.class, 
-            GROUP_SECONDARY_INDEX);
-        blobBySubGroup = store.getSecondaryIndex(blobByIndex, String.class, 
-            SUBGROUP_SECONDARY_INDEX);
-        
-        hashGroupByIndex = store.getPrimaryIndex(String.class, HashGroup.class);
+        blobByGroup = store.getSecondaryIndex(blobByIndex, String.class,
+                GROUP_SECONDARY_INDEX);
+        blobBySubGroup = store.getSecondaryIndex(blobByIndex, String.class,
+                SUBGROUP_SECONDARY_INDEX);
+
+        groupByIndex = store.getPrimaryIndex(String.class, HashGroup.class);
     }
 
     public PrimaryIndex<String, Blob> getBlobByIndex() {
-      return blobByIndex;
+        return blobByIndex;
     }
 
     public SecondaryIndex<String, String, Blob> getBlobByGroup() {
-      return blobByGroup;
+        return blobByGroup;
     }
 
     public SecondaryIndex<String, String, Blob> getBlobBySubGroup() {
-      return blobBySubGroup;
+        return blobBySubGroup;
     }
 
-    public PrimaryIndex<String, HashGroup> getHashGroupByIndex() {
-      return hashGroupByIndex;
+    public PrimaryIndex<String, HashGroup> getGroupByIndex() {
+        return groupByIndex;
     }
 }

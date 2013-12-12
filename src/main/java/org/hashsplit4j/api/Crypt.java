@@ -21,58 +21,59 @@ import java.util.List;
 
 public class Crypt {
 
-  /**
-   * Calculates the directory hash of the given string of contents
-   * 
-   * @param content
-   * @return
-   */
-  public static String toHexFromText(String text) {
-    if (text == null)
-      return null;
-    
-    return toHexFromByte(text.getBytes());
-  }
-  
-  /**
-   * Calculates the directory hash of the given bytes of contents
-   * 
-   * @param content
-   * @return
-   */
-  public static String toHexFromByte(byte[] bytes) {
-    if (bytes == null)
-      return null;
+    /**
+     * Calculates the directory hash of the given string of contents
+     * 
+     * @param content
+     * @return
+     */
+    public static String toHexFromText(String text) {
+        if (text == null)
+            return null;
 
-    MessageDigest crypto = Parser.getCrypt();
-    crypto.update(bytes);
-    return Parser.toHex(crypto);
-  }
-
-  /**
-   * Calculates the hash of the given childrens (ie the directory hash with the given childrens)
-   * 
-   * @param children
-   * @return
-   */
-  public static String toHexFromArray(List<Blob> childrens) {
-    MessageDigest crypto = Parser.getCrypt();
-    for (Blob child : childrens) {
-      String line = toHashableText(child);
-      crypto.update(line.getBytes());
+        return toHexFromByte(text.getBytes());
     }
-    return Parser.toHex(crypto);
-  }
-  
-  public static String toHashableText(Blob child) {
-    StringBuilder builder = new StringBuilder();
-    if (child == null)
-      return null;
-    
-    builder.append(child.getHash());
-    builder.append(":");
-    builder.append(child.getContents());
-    builder.append("\n");
-    return builder.toString();
-  }
+
+    /**
+     * Calculates the directory hash of the given bytes of contents
+     * 
+     * @param content
+     * @return
+     */
+    public static String toHexFromByte(byte[] bytes) {
+        if (bytes == null)
+            return null;
+
+        MessageDigest crypto = Parser.getCrypt();
+        crypto.update(bytes);
+        return Parser.toHex(crypto);
+    }
+
+    /**
+     * Calculates the hash of the given childrens (ie the directory hash with
+     * the given childrens)
+     * 
+     * @param children
+     * @return
+     */
+    public static String toHexFromArray(List<Blob> childrens) {
+        MessageDigest crypto = Parser.getCrypt();
+        for (Blob child : childrens) {
+            String line = toHashableText(child);
+            crypto.update(line.getBytes());
+        }
+        return Parser.toHex(crypto);
+    }
+
+    public static String toHashableText(Blob child) {
+        StringBuilder builder = new StringBuilder();
+        if (child == null)
+            return null;
+
+        builder.append(child.getHash());
+        builder.append(":");
+        builder.append(child.getContents());
+        builder.append("\n");
+        return builder.toString();
+    }
 }

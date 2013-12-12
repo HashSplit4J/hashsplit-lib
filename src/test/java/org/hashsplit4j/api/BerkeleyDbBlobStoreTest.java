@@ -51,17 +51,7 @@ public class BerkeleyDbBlobStoreTest {
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
         blobStore.closeEnv();
-        if (envHome.isDirectory()) {
-            for(File f : envHome.listFiles()) {
-                if( !f.delete() ) {
-                    System.err.println("Couldnt delete: " + f.getAbsolutePath());
-                }
-            }
-        }
-        
-        if (!envHome.delete()) {
-            System.err.println("Failed to delete db directory");
-        }
+        blobStore.removeDbFiles(envHome);
     }
 
 //    @Test
