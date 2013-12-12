@@ -24,11 +24,6 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.persist.EntityStore;
 import com.sleepycat.persist.StoreConfig;
 
-/**
- * @author <a href="mailto:sondn@exoplatform.com">Ngoc Son Dang</a>
- * @version BerkeleyDbEnv.java Dec 11, 2013
- *
- */
 public class BerkeleyDbEnv {
 
     private Environment env;

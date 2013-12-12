@@ -26,8 +26,7 @@ import com.sleepycat.persist.model.SecondaryKey;
  * Blob entity is used for storage in the Berkeley DB
  *        e.g: Blob {"e111885f8b7797884299e513ace4b8174a6e25fa", "e11", 
  *                        "e11188", "Oracle Berkeley DB Java Edition"}
- * 
- * @author <a href="mailto:sondn@exoplatform.com">Ngoc Son Dang</a>
+ *                        
  * @version Blob.java Dec 11, 2013
  */
 @Entity

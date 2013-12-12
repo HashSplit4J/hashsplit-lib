@@ -66,17 +66,19 @@ public class BerkeleyDbBlobStoreTest {
 
 //    @Test
     public void testSetBlobWithoutDuplicate() {
-        // Insert 1000 entities to berkeleydb
-        for (int j = 1000; j >= 0; j--) {
-            String data = "This is value of the key " + j + ":";
-            String hash = Crypt.toHexFromText(String.valueOf(j));
-            blobStore.setBlob(hash, data.getBytes());
-        }
+        // Insert a entity to berkeleydb
+        String data = "1";
+        String hash = Crypt.toHexFromText(data);
+        
+        blobStore.setBlob(hash, data.getBytes());
+        byte[] expected = blobStore.getBlob(hash);
+        
+        assertEquals(data, new String(expected));
     }
 
 //    @Test
     public void testSetBlobWithDuplicate() {
-        String origData = "This is value of the key 1:";
+        String origData = "1";
         String hash = Crypt.toHexFromText("1");
         blobStore.setBlob(hash, origData.getBytes());
         
@@ -146,13 +148,18 @@ public class BerkeleyDbBlobStoreTest {
         // Lets generate the hash groups
         blobStore.generateHashes();
         
-        // OK, there should now be 892 root group corresponding to rootGroupName above
+        // OK, there should now be 3 root group corresponding to rootGroupName above
         rootGroups = blobStore.getRootGroups();
-        assertEquals(892, rootGroups.size()); // should be 892 root groups
+        assertEquals(3, rootGroups.size()); // should be 3 root groups
     }
     
 //    @Test
     public void testSubGroupWithParent() {
+        String hash = "f739349daff6e29994b561a6d402f4ebea8f7edb";
+        String data = "Berkeley DB Java Edition";
+        
+        blobStore.setBlob(hash, data.getBytes());
+      
         String parent = "f73";
         System.out.println("\tGet all sub group in the group " + parent);
         System.out.println("--------------------------------------------------------");
@@ -162,7 +169,7 @@ public class BerkeleyDbBlobStoreTest {
             System.out.println("Content hash: " + group.getContentHash());
         }
         
-        assertEquals(2, subGroups.size());
+        assertEquals(1, subGroups.size());
     }
     
 //    @Test
