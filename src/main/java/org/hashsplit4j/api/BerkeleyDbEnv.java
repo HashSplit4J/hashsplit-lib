@@ -30,14 +30,15 @@ public class BerkeleyDbEnv {
 
     private EntityStore store;
 
-    // Our constructor does nothing
-    public BerkeleyDbEnv() {
-    }
+    /**
+     * Our constructor does nothing
+     */
+    public BerkeleyDbEnv() {}
 
     /**
-     * Setup a Berkeley DB engine environment, and preload some blob records
+     * Setup a Berkeley DB engine environment, and reload some blob records
      * 
-     * @param envHome
+     * @param Environment home directory
      * @param readOnly
      * @throws DatabaseException
      */
@@ -110,11 +111,9 @@ public class BerkeleyDbEnv {
      * @param envHome
      */
     public void removeDbFiles(File envHome) {
-        if (envHome.isDirectory()) {
-            for(File f : envHome.listFiles()) {
-                if( !f.delete() ) {
-                    System.err.println("Couldnt delete: " + f.getAbsolutePath());
-                }
+        for(File f : envHome.listFiles()) {
+            if( !f.delete() ) {
+                System.err.println("Couldnt delete: " + f.getAbsolutePath());
             }
         }
         

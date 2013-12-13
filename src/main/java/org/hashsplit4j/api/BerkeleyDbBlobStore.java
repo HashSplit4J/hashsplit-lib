@@ -50,25 +50,18 @@ public class BerkeleyDbBlobStore implements BlobStore {
     @Override
     public void setBlob(String hash, byte[] bytes) {
         if (hash == null || bytes == null)
-        	throw new RuntimeException("Key and value can not be null for store blob function");
+        	throw new RuntimeException("Key and data can not be null for store blob function");
 
-        // Get root group's name from hash
+        // Calculate root group and sub groups based on hash
         String group = hash.substring(0, nPrefGroup);
-        // Get sub group's name from hash
         String subGroup = hash.substring(0, nPrefSubGroup);
         
         // Put it in the store. Note that this causes our secondary key
         // to be automatically updated for us.
         dbAccessor.getBlobByIndex().putNoOverwrite(new Blob(hash, group, subGroup, bytes));
-        
-        // When insert a blob, insert the blob in one table and also insert into a key table.
-        // Where the key table has the group and the blob's hash.
-        // If doesn't exist, we just insert to DB with 'INVALID' status and should be removed if existing in the BerkeleyDB
-        removeMissingHashes(group, subGroup);
-        
         // So we should ensure that anything affected is removed
-        dbAccessor.getGroupByIndex().putNoOverwrite(new HashGroup(group, null, Status.INVALID));
-        dbAccessor.getSubGroupByIndex().putNoOverwrite(new SubGroup(subGroup, group, null, Status.INVALID));
+        removeGroupMissingHash(group);
+        removeSubGroupMissingHash(subGroup);
     }
 
     @Override
@@ -86,11 +79,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
 
     @Override
     public boolean hasBlob(String hash) {
-        byte[] bytes = getBlob(hash);
-        if (bytes != null && bytes.length > 0)
-        	return true;
-
-        return false;
+        return dbAccessor.getBlobByIndex().contains(hash);
     }
 
     /**
@@ -116,9 +105,10 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return
      */
     public void generateHashes() {
-    	// Recalculate or regenerate hashes for the groups is missing hash
+    	// Recalculate or regenerate hashes for the groups are missing hashes
     	// Get a list of root groups with 'INVALID' status then recalculate or regenerate hashes for 'INVALID' root groups
     	EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.INVALID).entities();
+    	
     	try {
 			for (HashGroup hashGroup : entities) {
 				// Get a list of sub groups for the given root group's name
@@ -184,25 +174,25 @@ public class BerkeleyDbBlobStore implements BlobStore {
      */
     public List<HashGroup> getSubGroups(String parent) {
         List<HashGroup> groups = new ArrayList<HashGroup>();
-        if (parent != null && parent.length() > 0) {
-        	// Return a list of sub groups for the given parent group's name
-        	EntityCursor<SubGroup> entities = dbAccessor.getSubGroupByParent().subIndex(parent).entities();
-        	try {
-				for (SubGroup subGroup : entities) {
-					// Should be recalculate or regenerate hash for sub group 
-					// if sub group is not missing hash.
-					if (subGroup.getStatus().equals(Status.INVALID)) {
-						getBlobHashes(subGroup.getName());
-						// Reset properties of sub group
-						subGroup = dbAccessor.getSubGroupByIndex().get(subGroup.getName());
-					}
-					
-					groups.add(new HashGroup(subGroup.getName(), subGroup.getContentHash(), 
-							subGroup.getStatus()));
-				}
-			} finally {
-				entities.close();
-			}
+        
+        // Return a list of sub groups for the given parent group's name
+        EntityCursor<SubGroup> entities = dbAccessor.getSubGroupByParent().subIndex(parent).entities();
+        try {
+            for (SubGroup subGroup : entities) {
+                // Should be recalculate or regenerate hash for sub group 
+                // if it's missing hash
+                if (subGroup.getStatus().equals(Status.INVALID)) {
+                    getBlobHashes(subGroup.getName());
+                    
+                    // Reset properties of sub group
+                    subGroup = dbAccessor.getSubGroupByIndex().get(subGroup.getName());
+                }
+                
+                groups.add(new HashGroup(subGroup.getName(), subGroup.getContentHash(), 
+                        subGroup.getStatus()));
+            }
+        } finally {
+            entities.close();
         }
         return groups;
     }
@@ -215,38 +205,55 @@ public class BerkeleyDbBlobStore implements BlobStore {
      */
     public List<String> getBlobHashes(String subGroupName) {
         List<String> hashes = new ArrayList<String>();
-        if (subGroupName != null && !subGroupName.isEmpty()) {
-            // Use the sub group name secondary key to retrieve these objects of Blob.class
-            EntityCursor<Blob> entities = dbAccessor.getBlobBySubGroup().subIndex(subGroupName).entities();
-            try {
-                for (Blob blob : entities) {
-                	hashes.add(blob.getHash());
-                }
-                
-                // Removed sub group if it's existing
-                dbAccessor.getSubGroupByIndex().delete(subGroupName);
-                
-                // A second level group is just represented by a list of hashes of the blobs inside it
-                dbAccessor.getSubGroupByIndex().putNoOverwrite(new SubGroup(subGroupName, 
-                		subGroupName.substring(0, nPrefGroup), Crypt.toHexFromHash(hashes), Status.VALID));
-            } finally {
-                entities.close();
+        // Use the sub group name secondary key to retrieve these objects of Blob.class
+        EntityCursor<Blob> entities = dbAccessor.getBlobBySubGroup().subIndex(subGroupName).entities();
+        try {
+            for (Blob blob : entities) {
+                hashes.add(blob.getHash());
             }
+            
+            // Removed sub group if it's existing
+            if (dbAccessor.getSubGroupByIndex().contains(subGroupName))
+                dbAccessor.getSubGroupByIndex().delete(subGroupName);
+            
+            // A second level group is just represented by a list of hashes of the blobs inside it
+            dbAccessor.getSubGroupByIndex().putNoOverwrite(new SubGroup(subGroupName, 
+                    subGroupName.substring(0, nPrefGroup), Crypt.toHexFromHash(hashes), Status.VALID));
+        } finally {
+            entities.close();
         }
         return hashes;
     }
     
     /**
-     * This should delete that root group and sub group because the original root group
-     * and sub group are no longer valid
+     * When insert a blob, insert the blob in one table and also insert into a key table.
+     * Where the key table has the group and the blob's hash. If doesn't exist, 
+     * we just insert to DB with 'INVALID' status and should delete that root group 
+     * and sub group because the original root group and sub group are no longer valid
      * 
-     * @param hash
+     * @param group
      */
-    private void removeMissingHashes(String group, String subGroup) {
-        if (group != null)
-        	dbAccessor.getGroupByIndex().delete(group);
+    private void removeGroupMissingHash(String group) {
+        if (dbAccessor.getGroupByIndex().contains(group))
+            dbAccessor.getGroupByIndex().delete(group);
         
-        if (subGroup != null)
-        	dbAccessor.getSubGroupByIndex().delete(subGroup);
+        dbAccessor.getGroupByIndex().putNoOverwrite(new HashGroup(group, 
+                null, Status.INVALID));
+    }
+    
+    /**
+     * When insert a blob, insert the blob in one table and also insert into a key table.
+     * Where the key table has the group and the blob's hash. If doesn't exist, 
+     * we just insert to DB with 'INVALID' status and should delete that root group 
+     * and sub group because the original root group and sub group are no longer valid
+     * 
+     * @param subGroup
+     */
+    private void removeSubGroupMissingHash(String subGroup) {
+        if (dbAccessor.getSubGroupByIndex().contains(subGroup))
+            dbAccessor.getSubGroupByIndex().delete(subGroup);
+        
+        dbAccessor.getSubGroupByIndex().putNoOverwrite(new SubGroup(subGroup, 
+                subGroup.substring(0, nPrefGroup), null, Status.INVALID));
     }
 }

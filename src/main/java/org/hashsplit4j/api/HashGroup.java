@@ -53,7 +53,7 @@ import com.sleepycat.persist.model.SecondaryKey;
  * hashes must either be deleted or recalculated when new blobs are inserted It
  * will often be inefficient to recalculate hashes on every insertion, and would
  * be unnecessary because syncs are only occasional, so instead we assume they
- * will only be recaculated on demand.
+ * will only be recalculated on demand.
  */
 @Entity
 public class HashGroup {

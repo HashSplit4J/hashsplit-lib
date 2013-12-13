@@ -32,8 +32,6 @@ public class SubGroup {
 	private String parent;
 	
 	private String contentHash;
-	
-	@SecondaryKey(relate = MANY_TO_ONE)
     private String status; 	// Current status of group (include root group or sub group)
     						// INVALID	: Status is missing hash
     						// VALID	: status is valid 

@@ -30,10 +30,8 @@ import com.sleepycat.persist.SecondaryIndex;
 public class BerkeleyDbAccessor {
   
     private static final String GROUP_SECONDARY_INDEX = "group";
-    private static final String SUBGROUP_SECONDARY_INDEX = "subGroup";
-    
-    private static final String STATUS_SECONDARY_INDEX = "status";
-    
+    private static final String SUBGROUP_SECONDARY_INDEX = "subGroup";    
+    private static final String STATUS_SECONDARY_INDEX = "status";    
     private static final String PARENT_SECONDARY_INDEX = "parent";
 
     // Blob Accessors
@@ -48,7 +46,6 @@ public class BerkeleyDbAccessor {
     // Sub Group Accessors
     private PrimaryIndex<String, SubGroup> subGroupByIndex;
     private SecondaryIndex<String, String, SubGroup> subGroupByParent;
-//    private SecondaryIndex<String, String, SubGroup> subGroupByStatus;
 
     /**
      * Open the indices
@@ -84,8 +81,6 @@ public class BerkeleyDbAccessor {
         // data member.
         subGroupByParent = store.getSecondaryIndex(subGroupByIndex, String.class,
         		PARENT_SECONDARY_INDEX);
-//        subGroupByStatus = store.getSecondaryIndex(subGroupByIndex, String.class,
-//        		STATUS_SECONDARY_INDEX);
     }
 
     public PrimaryIndex<String, Blob> getBlobByIndex() {
@@ -115,8 +110,4 @@ public class BerkeleyDbAccessor {
 	public SecondaryIndex<String, String, SubGroup> getSubGroupByParent() {
 		return subGroupByParent;
 	}
-
-//	public SecondaryIndex<String, String, SubGroup> getSubGroupByStatus() {
-//		return subGroupByStatus;
-//	}
 }
