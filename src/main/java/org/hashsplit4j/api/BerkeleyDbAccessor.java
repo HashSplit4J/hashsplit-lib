@@ -31,6 +31,10 @@ public class BerkeleyDbAccessor {
   
     private static final String GROUP_SECONDARY_INDEX = "group";
     private static final String SUBGROUP_SECONDARY_INDEX = "subGroup";
+    
+    private static final String STATUS_SECONDARY_INDEX = "status";
+    
+    private static final String PARENT_SECONDARY_INDEX = "parent";
 
     // Blob Accessors
     private PrimaryIndex<String, Blob> blobByIndex;
@@ -39,6 +43,12 @@ public class BerkeleyDbAccessor {
 
     // Hash Group Accessors
     private PrimaryIndex<String, HashGroup> groupByIndex;
+    private SecondaryIndex<String, String, HashGroup> groupByStatus;
+    
+    // Sub Group Accessors
+    private PrimaryIndex<String, SubGroup> subGroupByIndex;
+    private SecondaryIndex<String, String, SubGroup> subGroupByParent;
+//    private SecondaryIndex<String, String, SubGroup> subGroupByStatus;
 
     /**
      * Open the indices
@@ -58,6 +68,24 @@ public class BerkeleyDbAccessor {
                 SUBGROUP_SECONDARY_INDEX);
 
         groupByIndex = store.getPrimaryIndex(String.class, HashGroup.class);
+        
+        // Secondary key for HashGroup classes
+        // Last field in the getSecondaryIndex() method must be
+        // the name of a class member; in this case, an HashGroup.class
+        // data member.
+        groupByStatus = store.getSecondaryIndex(groupByIndex, String.class,
+        		STATUS_SECONDARY_INDEX);
+        
+        subGroupByIndex = store.getPrimaryIndex(String.class, SubGroup.class);
+        
+        // Secondary key for SubGroup classes
+        // Last field in the getSecondaryIndex() method must be
+        // the name of a class member; in this case, an SubGroup.class
+        // data member.
+        subGroupByParent = store.getSecondaryIndex(subGroupByIndex, String.class,
+        		PARENT_SECONDARY_INDEX);
+//        subGroupByStatus = store.getSecondaryIndex(subGroupByIndex, String.class,
+//        		STATUS_SECONDARY_INDEX);
     }
 
     public PrimaryIndex<String, Blob> getBlobByIndex() {
@@ -75,4 +103,20 @@ public class BerkeleyDbAccessor {
     public PrimaryIndex<String, HashGroup> getGroupByIndex() {
         return groupByIndex;
     }
+
+	public SecondaryIndex<String, String, HashGroup> getGroupByStatus() {
+		return groupByStatus;
+	}
+
+	public PrimaryIndex<String, SubGroup> getSubGroupByIndex() {
+		return subGroupByIndex;
+	}
+
+	public SecondaryIndex<String, String, SubGroup> getSubGroupByParent() {
+		return subGroupByParent;
+	}
+
+//	public SecondaryIndex<String, String, SubGroup> getSubGroupByStatus() {
+//		return subGroupByStatus;
+//	}
 }

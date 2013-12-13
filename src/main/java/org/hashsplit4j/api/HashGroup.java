@@ -16,8 +16,11 @@
  */
 package org.hashsplit4j.api;
 
+import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
+
 import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
+import com.sleepycat.persist.model.SecondaryKey;
 
 /**
  * Represents a hash prefix (ie the first n digits) common to a list of hashes,
@@ -54,26 +57,36 @@ import com.sleepycat.persist.model.PrimaryKey;
  */
 @Entity
 public class HashGroup {
-
+	
     @PrimaryKey
     private String name;
     private String contentHash;
+    
+    @SecondaryKey(relate = MANY_TO_ONE)
+    private String status; 	// Current status of group (include root group or sub group)
+    						// INVALID	: Status is missing hash
+    						// VALID	: status is valid 
 
     /**
      * Needed for deserialization
      */
     private HashGroup() {} // Scope should private
 
-    public HashGroup(String name, String contentHash) {
-        this.name = name;
-        this.contentHash = contentHash;
-    }
+	public HashGroup(String name, String contentHash, String status) {
+		this.name = name;
+		this.contentHash = contentHash;
+		this.status = status;
+	}
 
-    public String getContentHash() {
-        return contentHash;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getContentHash() {
+		return contentHash;
+	}
+
+	public String getStatus() {
+		return status;
+	}
 }

@@ -22,52 +22,47 @@ import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
 import com.sleepycat.persist.model.SecondaryKey;
 
-/**
- * The Blob entity class is used for storage in the Berkeley DB e.g: 
- *      Blob {"e111885f8b7797884299e513ace4b8174a6e25fa", "e11", 
- *                  "e11188", "Oracle Berkeley DB Java Edition"}
- * 
- * @version Blob.java Dec 11, 2013
- */
 @Entity
-public class Blob {
+public class SubGroup {
 
-    @PrimaryKey
-    private String hash;
+	@PrimaryKey
+	private String name;
+	
+	@SecondaryKey(relate = MANY_TO_ONE)
+	private String parent;
+	
+	private String contentHash;
+	
+	@SecondaryKey(relate = MANY_TO_ONE)
+    private String status; 	// Current status of group (include root group or sub group)
+    						// INVALID	: Status is missing hash
+    						// VALID	: status is valid 
 
-    @SecondaryKey(relate = MANY_TO_ONE)
-    private String group;
-
-    @SecondaryKey(relate = MANY_TO_ONE)
-    private String subGroup;
-    
-    private byte[] bytes;
-
-    /**
-     * Needed for deserialization
-     */
-    private Blob() {}
-    
-	public Blob(String hash, String group, String subGroup, byte[] bytes) {
-		this.hash = hash;
-		this.group = group;
-		this.subGroup = subGroup;
-		this.bytes = bytes;
+	/**
+	 * Needed for deserialization
+	 */
+	private SubGroup() {}
+	
+	public SubGroup(String name, String parent, String contentHash, String status) {
+		this.name = name;
+		this.parent = parent;
+		this.contentHash = contentHash;
+		this.status = status;
 	}
 
-	public String getHash() {
-		return hash;
+	public String getName() {
+		return name;
 	}
 
-	public String getGroup() {
-		return group;
+	public String getParent() {
+		return parent;
 	}
 
-	public String getSubGroup() {
-		return subGroup;
+	public String getContentHash() {
+		return contentHash;
 	}
 
-	public byte[] getBytes() {
-		return bytes;
+	public String getStatus() {
+		return status;
 	}
 }

@@ -56,23 +56,51 @@ public class Crypt {
      * @param children
      * @return
      */
-    public static String toHexFromArray(List<Blob> childrens) {
+    public static String toHexFromBlob(List<HashGroup> childrens) {
         MessageDigest crypto = Parser.getCrypt();
-        for (Blob child : childrens) {
+        for (HashGroup child : childrens) {
             String line = toHashableText(child);
             crypto.update(line.getBytes());
         }
         return Parser.toHex(crypto);
     }
+    
+    /**
+     * Calculates the hash for the given hashes of Blobs (ie the directory hash with
+     * the given blobs)
+     * 
+     * @param childrens
+     * @return
+     */
+    public static String toHexFromHash(List<String> childrens) {
+    	MessageDigest crypto = Parser.getCrypt();
+    	for (String children : childrens) {
+    		String line = children;
+    		line += "\n";
+    		crypto.update(line.getBytes());
+    	}
+    	return Parser.toHex(crypto);
+    }
 
-    public static String toHashableText(Blob child) {
+    /**
+     * Calculates the hash for the given Sub Group for a Root group
+     * 
+     * E.g: Sub Group	
+     * 			{sub group's name} : {hash}
+     * 			{012abc}:{7359c2e2759dae4b07d99643400a838eaa2e7a25}
+     * 		-> hash = SHA1(012abc:7359c2e2759dae4b07d99643400a838eaa2e7a25 + '\n')
+     * 
+     * @param child
+     * @return
+     */
+    private static String toHashableText(HashGroup child) {
         StringBuilder builder = new StringBuilder();
         if (child == null)
             return null;
 
-        builder.append(child.getHash());
+        builder.append(child.getName());
         builder.append(":");
-        builder.append(child.getContents());
+        builder.append(child.getContentHash());
         builder.append("\n");
         return builder.toString();
     }

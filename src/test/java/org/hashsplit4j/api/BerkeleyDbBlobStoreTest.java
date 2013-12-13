@@ -190,6 +190,7 @@ public class BerkeleyDbBlobStoreTest {
         System.out.println("SubGroups's name: " + subGroupName);
         // Check the group is not present
         List<HashGroup> rootGroups = blobStore.getRootGroups();
+        System.out.println("Size: " + rootGroups.size());
         assertTrue(rootGroups == null || rootGroups.isEmpty());
         
         // ok, nothing in there, lets do an insert and check for one group
