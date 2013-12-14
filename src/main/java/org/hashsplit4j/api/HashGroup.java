@@ -54,6 +54,16 @@ import com.sleepycat.persist.model.SecondaryKey;
  * will often be inefficient to recalculate hashes on every insertion, and would
  * be unnecessary because syncs are only occasional, so instead we assume they
  * will only be recalculated on demand.
+ * 
+ * E.g  +-----------+---------------+---------------+
+ *      |   NAME    |   CONTENT     |   STATUS      |
+ *      +-----------+---------------+---------------+
+ *      |   012     |   xxxxxx      |   INVALID     |
+ *      |   ccc     |   xxxxxx      |   VALID       |
+ *      |   xyz     |   xxxxxx      |   INVALID     |
+ *      |   abc     |   xxxxxx      |   VALID       |
+ *      +-----------+---------------+---------------+
+ *      
  */
 @Entity
 public class HashGroup {

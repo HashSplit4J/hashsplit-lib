@@ -24,8 +24,21 @@ import com.sleepycat.persist.model.SecondaryKey;
 
 /**
  * The Blob entity class is used for storage in the Berkeley DB e.g: 
- *      Blob {"e111885f8b7797884299e513ace4b8174a6e25fa", "e11", 
- *                  "e11188", "Oracle Berkeley DB Java Edition"}
+ *      Blob {
+ *              "e111885f8b7797884299e513ace4b8174a6e25fa", 
+ *              "e11", 
+ *              "e11188", 
+ *              "Oracle Berkeley DB Java Edition"
+ *           }
+ *                  
+ * E.g  +-----------------------+-----------+---------------+-----------------------+
+ *      |        HASH           |  GROUP    |   SUB GROUP   |   BYTES (CONTENTS)    |
+ *      +-----------------------+-----------+---------------+-----------------------+
+ *      |  e111885f8b7797884..  |    e11    |   e11188      |         xxx           |
+ *      |                       |           |               |                       |
+ *      |                       |           |               |                       |
+ *      |                       |           |               |                       |
+ *      +-----------------------+-----------+---------------+-----------------------+
  * 
  * @version Blob.java Dec 11, 2013
  */
@@ -34,8 +47,6 @@ public class Blob {
 
     @PrimaryKey
     private String hash;
-
-    @SecondaryKey(relate = MANY_TO_ONE)
     private String group;
 
     @SecondaryKey(relate = MANY_TO_ONE)

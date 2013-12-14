@@ -102,6 +102,15 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * Create any missing hashes for blobs and groups. Note that it is assumed
      * that any group insertions will have deleted group items
      * 
+     * E.g   +-----------+---------------+---------------+
+     *       |   NAME    |   CONTENT     |   STATUS      |
+     *       +-----------+---------------+---------------+
+     *       |   012     |   xxxxxx      |   INVALID     |
+     *       |   ccc     |   xxxxxx      |   INVALID     |
+     *       |   xyz     |   xxxxxx      |   INVALID     |
+     *       |   abc     |   xxxxxx      |   INVALID     |
+     *       +-----------+---------------+---------------+
+     *      
      * @return
      */
     public void generateHashes() {
@@ -135,13 +144,11 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * E.g	+-----------+---------------+---------------+
      * 		|	NAME	|	CONTENT		|	STATUS		|
      * 		+-----------+---------------+---------------+
-     * 		|	012a	|	xxxxxx		|	VALID		|
-     *		|	012b	|	xxxxxx		|	VALID		|
-     *		|	012c	|	xxxxxx		|	VALID		|
-     *		|	012d	|	xxxxxx		|	VALID		|
+     * 		|	012 	|	xxxxxx		|	VALID		|
+     *		|	ccc 	|	xxxxxx		|	VALID		|
+     *		|	xyz 	|	xxxxxx		|	VALID		|
+     *		|	abc 	|	xxxxxx		|	VALID		|
      *		+-----------+---------------+---------------+
-     *
-     * We have a group 012 and have four sub group 012axx, 012bxx, 012cxx, 012dxx
      * 
      * @return
      */

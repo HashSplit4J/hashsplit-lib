@@ -28,15 +28,13 @@ import com.sleepycat.persist.SecondaryIndex;
  * @version BerkeleyDbAccessor.java Dec 12, 2013
  */
 public class BerkeleyDbAccessor {
-  
-    private static final String GROUP_SECONDARY_INDEX = "group";
+    
     private static final String SUBGROUP_SECONDARY_INDEX = "subGroup";    
     private static final String STATUS_SECONDARY_INDEX = "status";    
     private static final String PARENT_SECONDARY_INDEX = "parent";
 
     // Blob Accessors
     private PrimaryIndex<String, Blob> blobByIndex;
-    private SecondaryIndex<String, String, Blob> blobByGroup;
     private SecondaryIndex<String, String, Blob> blobBySubGroup;
 
     // Hash Group Accessors
@@ -59,13 +57,10 @@ public class BerkeleyDbAccessor {
         // Last field in the getSecondaryIndex() method must be
         // the name of a class member; in this case, an Blob.class
         // data member.
-        blobByGroup = store.getSecondaryIndex(blobByIndex, String.class,
-                GROUP_SECONDARY_INDEX);
         blobBySubGroup = store.getSecondaryIndex(blobByIndex, String.class,
                 SUBGROUP_SECONDARY_INDEX);
 
         groupByIndex = store.getPrimaryIndex(String.class, HashGroup.class);
-        
         // Secondary key for HashGroup classes
         // Last field in the getSecondaryIndex() method must be
         // the name of a class member; in this case, an HashGroup.class
@@ -74,7 +69,6 @@ public class BerkeleyDbAccessor {
         		STATUS_SECONDARY_INDEX);
         
         subGroupByIndex = store.getPrimaryIndex(String.class, SubGroup.class);
-        
         // Secondary key for SubGroup classes
         // Last field in the getSecondaryIndex() method must be
         // the name of a class member; in this case, an SubGroup.class
@@ -85,10 +79,6 @@ public class BerkeleyDbAccessor {
 
     public PrimaryIndex<String, Blob> getBlobByIndex() {
         return blobByIndex;
-    }
-
-    public SecondaryIndex<String, String, Blob> getBlobByGroup() {
-        return blobByGroup;
     }
 
     public SecondaryIndex<String, String, Blob> getBlobBySubGroup() {

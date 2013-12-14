@@ -22,6 +22,22 @@ import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
 import com.sleepycat.persist.model.SecondaryKey;
 
+/**
+ * The entity for sub group class
+ * 
+ * E.g  +-----------+---------------+---------------+-----------+
+ *      |   NAME    |   CONTENT     |   STATUS      |  PARENT   |
+ *      +-----------+---------------+---------------+-----------+
+ *      |  012111   |   xxxxxx      |   INVALID     |   012     |
+ *      |  cccdfh   |   xxxxxx      |   VALID       |   ccc     |
+ *      |  xyzld8   |   xxxxxx      |   INVALID     |   xyz     |
+ *      |  abcf11   |   xxxxxx      |   VALID       |   abc     |
+ *      +-----------+---------------+---------------+-----------+
+ * 
+ * @author <a href="mailto:sondn@exoplatform.com">Ngoc Son Dang</a>
+ * @version SubGroup.java Dec 14, 2013
+ * 
+ */
 @Entity
 public class SubGroup {
 
