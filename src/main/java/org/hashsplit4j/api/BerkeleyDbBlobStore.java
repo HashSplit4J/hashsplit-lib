@@ -52,16 +52,19 @@ public class BerkeleyDbBlobStore implements BlobStore {
         if (hash == null || bytes == null)
         	throw new RuntimeException("Key and data can not be null for store blob function");
 
-        // Calculate root group and sub groups based on hash
         String group = hash.substring(0, nPrefGroup);
         String subGroup = hash.substring(0, nPrefSubGroup);
         
         // Put it in the store. Note that this causes our secondary key
         // to be automatically updated for us.
         dbAccessor.getBlobByIndex().putNoOverwrite(new Blob(hash, group, subGroup, bytes));
-        // So we should ensure that anything affected is removed
-        removeGroupMissingHash(group);
-        removeSubGroupMissingHash(subGroup);
+        
+        // When insert a blob, insert the blob in one table and also insert into a key table.
+        // Where the key table has the group and the blob's hash. If doesn't exist, 
+        // we just insert to DB with 'INVALID' status and should delete that root group 
+        // and sub group because the original root group and sub group are no longer valid
+        dbAccessor.getGroupByIndex().put(new HashGroup(group, null, Status.INVALID));
+        dbAccessor.getSubGroupByIndex().put(new SubGroup(subGroup, group, null, Status.INVALID));
     }
 
     @Override
@@ -69,7 +72,6 @@ public class BerkeleyDbBlobStore implements BlobStore {
         if (hash == null)
         	throw new RuntimeException("Key can not be null for get blob function");
 
-        // Use the Blob's hash primary key to retrieve these objects
         Blob blob = dbAccessor.getBlobByIndex().get(hash);
         if (blob == null)
             return null;
@@ -114,22 +116,15 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return
      */
     public void generateHashes() {
-    	// Recalculate or regenerate hashes for the groups are missing hashes
-    	// Get a list of root groups with 'INVALID' status then recalculate or regenerate hashes for 'INVALID' root groups
     	EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.INVALID).entities();
-    	
     	try {
 			for (HashGroup hashGroup : entities) {
-				// Get a list of sub groups for the given root group's name
 				List<HashGroup> subGroups = getSubGroups(hashGroup.getName());
 				
-				// Recalculate or regenerate hashes for each root group bases on a list of sub groups,
-				// then store it into berkeleydb.
 				String recalHash = Crypt.toHexFromBlob(subGroups);
-				
-				// Remove old root group in the 'RootGroup' table from berkeleydb then put updated group into that table
-				dbAccessor.getGroupByIndex().delete(hashGroup.getName());
-				dbAccessor.getGroupByIndex().putNoOverwrite(new HashGroup(hashGroup.getName(), recalHash, Status.VALID));
+				hashGroup.setContentHash(recalHash);
+				hashGroup.setStatus(Status.VALID);
+				dbAccessor.getGroupByIndex().put(hashGroup);
 			}
 		} finally {
 			entities.close();
@@ -154,8 +149,6 @@ public class BerkeleyDbBlobStore implements BlobStore {
      */
     public List<HashGroup> getRootGroups() {
         List<HashGroup> groups = new ArrayList<HashGroup>();
-        // Get a cursor that will walk every root group object in the store.
-        // Return only those currently generated hashes.
         EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.VALID).entities();
         try {
             Iterator<HashGroup> iterator = entities.iterator();
@@ -181,22 +174,17 @@ public class BerkeleyDbBlobStore implements BlobStore {
      */
     public List<HashGroup> getSubGroups(String parent) {
         List<HashGroup> groups = new ArrayList<HashGroup>();
-        
-        // Return a list of sub groups for the given parent group's name
         EntityCursor<SubGroup> entities = dbAccessor.getSubGroupByParent().subIndex(parent).entities();
         try {
             for (SubGroup subGroup : entities) {
-                // Should be recalculate or regenerate hash for sub group 
-                // if it's missing hash
                 if (subGroup.getStatus().equals(Status.INVALID)) {
                     getBlobHashes(subGroup.getName());
-                    
-                    // Reset properties of sub group
                     subGroup = dbAccessor.getSubGroupByIndex().get(subGroup.getName());
                 }
                 
-                groups.add(new HashGroup(subGroup.getName(), subGroup.getContentHash(), 
-                        subGroup.getStatus()));
+                HashGroup hashGroup = new HashGroup(subGroup.getName(), 
+                        subGroup.getContentHash(), subGroup.getStatus());
+                groups.add(hashGroup);
             }
         } finally {
             entities.close();
@@ -212,55 +200,19 @@ public class BerkeleyDbBlobStore implements BlobStore {
      */
     public List<String> getBlobHashes(String subGroupName) {
         List<String> hashes = new ArrayList<String>();
-        // Use the sub group name secondary key to retrieve these objects of Blob.class
         EntityCursor<Blob> entities = dbAccessor.getBlobBySubGroup().subIndex(subGroupName).entities();
         try {
             for (Blob blob : entities) {
                 hashes.add(blob.getHash());
             }
             
-            // Removed sub group if it's existing
-            if (dbAccessor.getSubGroupByIndex().contains(subGroupName))
-                dbAccessor.getSubGroupByIndex().delete(subGroupName);
-            
-            // A second level group is just represented by a list of hashes of the blobs inside it
-            dbAccessor.getSubGroupByIndex().putNoOverwrite(new SubGroup(subGroupName, 
-                    subGroupName.substring(0, nPrefGroup), Crypt.toHexFromHash(hashes), Status.VALID));
+            String recalHash = Crypt.toHexFromHash(hashes);
+            String rootGroup = subGroupName.substring(0, nPrefGroup);
+            SubGroup subGroup = new SubGroup(subGroupName, rootGroup, recalHash, Status.VALID);
+            dbAccessor.getSubGroupByIndex().put(subGroup);
         } finally {
             entities.close();
         }
         return hashes;
-    }
-    
-    /**
-     * When insert a blob, insert the blob in one table and also insert into a key table.
-     * Where the key table has the group and the blob's hash. If doesn't exist, 
-     * we just insert to DB with 'INVALID' status and should delete that root group 
-     * and sub group because the original root group and sub group are no longer valid
-     * 
-     * @param group
-     */
-    private void removeGroupMissingHash(String group) {
-        if (dbAccessor.getGroupByIndex().contains(group))
-            dbAccessor.getGroupByIndex().delete(group);
-        
-        dbAccessor.getGroupByIndex().putNoOverwrite(new HashGroup(group, 
-                null, Status.INVALID));
-    }
-    
-    /**
-     * When insert a blob, insert the blob in one table and also insert into a key table.
-     * Where the key table has the group and the blob's hash. If doesn't exist, 
-     * we just insert to DB with 'INVALID' status and should delete that root group 
-     * and sub group because the original root group and sub group are no longer valid
-     * 
-     * @param subGroup
-     */
-    private void removeSubGroupMissingHash(String subGroup) {
-        if (dbAccessor.getSubGroupByIndex().contains(subGroup))
-            dbAccessor.getSubGroupByIndex().delete(subGroup);
-        
-        dbAccessor.getSubGroupByIndex().putNoOverwrite(new SubGroup(subGroup, 
-                subGroup.substring(0, nPrefGroup), null, Status.INVALID));
     }
 }

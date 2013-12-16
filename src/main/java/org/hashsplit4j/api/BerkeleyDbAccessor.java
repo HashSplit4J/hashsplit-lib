@@ -33,17 +33,20 @@ public class BerkeleyDbAccessor {
     private static final String STATUS_SECONDARY_INDEX = "status";    
     private static final String PARENT_SECONDARY_INDEX = "parent";
 
-    // Blob Accessors
-    private PrimaryIndex<String, Blob> blobByIndex;
-    private SecondaryIndex<String, String, Blob> blobBySubGroup;
-
-    // Hash Group Accessors
-    private PrimaryIndex<String, HashGroup> groupByIndex;
-    private SecondaryIndex<String, String, HashGroup> groupByStatus;
+    private final PrimaryIndex<String, Blob> blobByIndex;
     
-    // Sub Group Accessors
-    private PrimaryIndex<String, SubGroup> subGroupByIndex;
-    private SecondaryIndex<String, String, SubGroup> subGroupByParent;
+    private final PrimaryIndex<String, HashGroup> groupByIndex;
+    
+    private final PrimaryIndex<String, SubGroup> subGroupByIndex;
+    
+    private final SecondaryIndex<String, String, Blob> blobBySubGroup;  // Secondary key for Blob classes
+                                                                        // Last field in the getSecondaryIndex() method must be
+                                                                        // the name of a class member; in this case, an Blob.class
+                                                                        // data member.
+    
+    private final SecondaryIndex<String, String, HashGroup> groupByStatus;  // Secondary key for HashGroup classes
+    
+    private final SecondaryIndex<String, String, SubGroup> subGroupByParent; // Secondary key for SubGroup classes
 
     /**
      * Open the indices
@@ -52,29 +55,12 @@ public class BerkeleyDbAccessor {
      * @throws DatabaseException
      */
     public BerkeleyDbAccessor(EntityStore store) throws DatabaseException {
-        blobByIndex = store.getPrimaryIndex(String.class, Blob.class);
-        // Secondary key for Blob classes
-        // Last field in the getSecondaryIndex() method must be
-        // the name of a class member; in this case, an Blob.class
-        // data member.
-        blobBySubGroup = store.getSecondaryIndex(blobByIndex, String.class,
-                SUBGROUP_SECONDARY_INDEX);
-
-        groupByIndex = store.getPrimaryIndex(String.class, HashGroup.class);
-        // Secondary key for HashGroup classes
-        // Last field in the getSecondaryIndex() method must be
-        // the name of a class member; in this case, an HashGroup.class
-        // data member.
-        groupByStatus = store.getSecondaryIndex(groupByIndex, String.class,
-        		STATUS_SECONDARY_INDEX);
-        
-        subGroupByIndex = store.getPrimaryIndex(String.class, SubGroup.class);
-        // Secondary key for SubGroup classes
-        // Last field in the getSecondaryIndex() method must be
-        // the name of a class member; in this case, an SubGroup.class
-        // data member.
-        subGroupByParent = store.getSecondaryIndex(subGroupByIndex, String.class,
-        		PARENT_SECONDARY_INDEX);
+        this.blobByIndex = store.getPrimaryIndex(String.class, Blob.class);
+        this.blobBySubGroup = store.getSecondaryIndex(blobByIndex, String.class, SUBGROUP_SECONDARY_INDEX);
+        this.groupByIndex = store.getPrimaryIndex(String.class, HashGroup.class);
+        this.groupByStatus = store.getSecondaryIndex(groupByIndex, String.class, STATUS_SECONDARY_INDEX);
+        this.subGroupByIndex = store.getPrimaryIndex(String.class, SubGroup.class);
+        this.subGroupByParent = store.getSecondaryIndex(subGroupByIndex, String.class, PARENT_SECONDARY_INDEX);
     }
 
     public PrimaryIndex<String, Blob> getBlobByIndex() {

@@ -88,15 +88,23 @@ public class HashGroup {
 		this.status = status;
 	}
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getContentHash() {
-		return contentHash;
-	}
+    public String getContentHash() {
+        return contentHash;
+    }
 
-	public String getStatus() {
-		return status;
-	}
+    public void setContentHash(String contentHash) {
+        this.contentHash = contentHash;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }

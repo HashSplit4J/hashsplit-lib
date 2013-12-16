@@ -27,7 +27,6 @@ import com.sleepycat.persist.StoreConfig;
 public class BerkeleyDbEnv {
 
     private Environment env;
-
     private EntityStore store;
 
     /**
@@ -44,9 +43,8 @@ public class BerkeleyDbEnv {
      */
     public void openEnv(File envHome, boolean readOnly) throws DatabaseException {
         if (!envHome.exists()) {
-            if (!envHome.mkdirs()) {
-                throw new RuntimeException("The directory " + envHome + " does not exist.");
-            }
+            if (!envHome.mkdirs())
+                throw new RuntimeException("The directory " + envHome + " does not exist");
         }
 
         EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -111,14 +109,12 @@ public class BerkeleyDbEnv {
      * @param envHome
      */
     public void removeDbFiles(File envHome) {
-        for(File f : envHome.listFiles()) {
-            if( !f.delete() ) {
-                System.err.println("Couldnt delete: " + f.getAbsolutePath());
-            }
+        for(File file : envHome.listFiles()) {
+            if(!file.delete())
+                System.err.println("Could not delete " + file.getAbsolutePath());
         }
         
-        if (!envHome.delete()) {
-            System.err.println("Failed to delete db directory");
-        }
+        if (!envHome.delete())
+            System.err.println("Failed to delete berkeley-db directory");
     }
 }
