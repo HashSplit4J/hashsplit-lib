@@ -17,199 +17,202 @@
 package org.hashsplit4j.api;
 
 import java.io.File;
-import java.nio.charset.Charset;
-
-import com.sleepycat.je.Database;
-import com.sleepycat.je.DatabaseConfig;
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.Durability;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.LockMode;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import com.sleepycat.persist.EntityCursor;
+
 public class BerkeleyDbBlobStore implements BlobStore {
+	
+    private final int nPrefGroup;
+    private final int nPrefSubGroup;
 
-    private static final Charset CHARSET_UTF = Charset.forName("UTF-8");
-
-    private final Environment env;
-
-    private final Database db;
+    private BerkeleyDbAccessor dbAccessor;
 
     /**
-     * Default folder for stored files
+     * Encapsulates the environment and data store
      */
-    private final File dbDir;
+    private BerkeleyDbEnv dbEnv = new BerkeleyDbEnv();
 
-    private final long cacheSize;
+    public BerkeleyDbBlobStore(File envHome, int nPrefGroup, int nPrefSubGroup) {
+        this.nPrefGroup = nPrefGroup;
+        this.nPrefSubGroup = nPrefSubGroup;
 
-    public BerkeleyDbBlobStore(File dbDir, long cacheSize) {
-        this.dbDir = dbDir;
-        this.cacheSize = cacheSize;
-        this.env = createDBEnvironment();
-        this.db = openDatabase();
+        dbEnv.openEnv(envHome,  // path to the environment home
+                false);         // Environment read-only?
+
+        // Open the data accessor. This is used to retrieve
+        // persistent objects.
+        dbAccessor = new BerkeleyDbAccessor(dbEnv.getEntityStore());
     }
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
-        if (hash == null || bytes == null) {
-            throw new RuntimeException("Key and value can not be null for setBlob() function");
-        }
+        if (hash == null || bytes == null)
+        	throw new RuntimeException("Key and data can not be null for store blob function");
 
-        DatabaseEntry key = new DatabaseEntry(hash.getBytes(CHARSET_UTF));
-        DatabaseEntry data = new DatabaseEntry(bytes);
-        db.putNoOverwrite(null, key, data);
+        String group = hash.substring(0, nPrefGroup);
+        String subGroup = hash.substring(0, nPrefSubGroup);
+        
+        // Put it in the store. Note that this causes our secondary key
+        // to be automatically updated for us.
+        dbAccessor.getBlobByIndex().putNoOverwrite(new Blob(hash, group, subGroup, bytes));
+        
+        // When insert a blob, insert the blob in one table and also insert into a key table.
+        // Where the key table has the group and the blob's hash. If doesn't exist, 
+        // we just insert to DB with 'INVALID' status and should delete that root group 
+        // and sub group because the original root group and sub group are no longer valid
+        dbAccessor.getGroupByIndex().put(new HashGroup(group, null, Status.INVALID));
+        dbAccessor.getSubGroupByIndex().put(new SubGroup(subGroup, group, null, Status.INVALID));
     }
 
     @Override
     public byte[] getBlob(String hash) {
-        if (hash == null) {
-            throw new RuntimeException("Key can not be null for setBlob() function");
-        }
+        if (hash == null)
+        	throw new RuntimeException("Key can not be null for get blob function");
 
-        DatabaseEntry search = new DatabaseEntry();
-        db.get(null, new DatabaseEntry(hash.getBytes(CHARSET_UTF)), search, LockMode.DEFAULT);
-        return search.getData();
+        Blob blob = dbAccessor.getBlobByIndex().get(hash);
+        if (blob == null)
+            return null;
+        
+        return blob.getBytes();
     }
 
     @Override
     public boolean hasBlob(String hash) {
-        byte[] bytes = getBlob(hash);
-        if (bytes != null && bytes.length >= 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public void close() {
-        if (db != null) {
-            db.close();
-        }
-
-        if (env != null) {
-            env.cleanLog();
-            env.close();
-        }
+        return dbAccessor.getBlobByIndex().contains(hash);
     }
 
     /**
-     * Inits the databased environment used for all databases.
-     *
-     * @return environment
+     * Close the database environment and database store transaction
      */
-    private Environment createDBEnvironment() {
-        if (!dbDir.exists()) {
-            if (!dbDir.mkdirs()) {
-                throw new RuntimeException("The directory " + dbDir + " does not exist.");
-            }
-        }
-
-        EnvironmentConfig envCfg = new EnvironmentConfig();
-        envCfg.setAllowCreate(true);
-        envCfg.setSharedCache(true);
-        envCfg.setCacheSize(cacheSize);
-        envCfg.setDurability(Durability.COMMIT_SYNC);
-        return new Environment(dbDir, envCfg);
-    }
-
-    private Database openDatabase() {
-        DatabaseConfig dbCfg = new DatabaseConfig();
-        dbCfg.setAllowCreate(true);
-        dbCfg.setSortedDuplicates(false);
-        dbCfg.setOverrideDuplicateComparator(false);
-        return env.openDatabase(null, "", dbCfg);
+    public void closeEnv() {
+        dbEnv.closeEnv();
     }
     
+    /**
+     * Remove all of files for the given file directory
+     * 
+     * @param envHome
+     */
+    public void removeDbFiles(File envHome) {
+        dbEnv.removeDbFiles(envHome);
+    }
+
     /**
      * Create any missing hashes for blobs and groups. Note that it is assumed
-     * that any group insertions will have deleted group items 
+     * that any group insertions will have deleted group items
      * 
-     * @return 
+     * E.g   +-----------+---------------+---------------+
+     *       |   NAME    |   CONTENT     |   STATUS      |
+     *       +-----------+---------------+---------------+
+     *       |   012     |   xxxxxx      |   INVALID     |
+     *       |   ccc     |   xxxxxx      |   INVALID     |
+     *       |   xyz     |   xxxxxx      |   INVALID     |
+     *       |   abc     |   xxxxxx      |   INVALID     |
+     *       +-----------+---------------+---------------+
+     *      
+     * @return
      */
     public void generateHashes() {
-        
+    	EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.INVALID).entities();
+    	try {
+			for (HashGroup hashGroup : entities) {
+				List<HashGroup> subGroups = getSubGroups(hashGroup.getName());
+				
+				String recalHash = Crypt.toHexFromBlob(subGroups);
+				hashGroup.setContentHash(recalHash);
+				hashGroup.setStatus(Status.VALID);
+				dbAccessor.getGroupByIndex().put(hashGroup);
+			}
+		} finally {
+			entities.close();
+		}
     }
-    
+
     /**
-     * Get the group hashes for the initial hash prefix (ie first 3 chars). Return
-     * only those currently persisted ie do not dynamically generate any missing hashes
+     * Get the group hashes for the initial hash prefix (ie first 3 chars).
+     * Return only those currently persisted ie do not dynamically generate any
+     * missing hashes
      * 
-     * @return 
+     * E.g	+-----------+---------------+---------------+
+     * 		|	NAME	|	CONTENT		|	STATUS		|
+     * 		+-----------+---------------+---------------+
+     * 		|	012 	|	xxxxxx		|	VALID		|
+     *		|	ccc 	|	xxxxxx		|	VALID		|
+     *		|	xyz 	|	xxxxxx		|	VALID		|
+     *		|	abc 	|	xxxxxx		|	VALID		|
+     *		+-----------+---------------+---------------+
+     * 
+     * @return
      */
     public List<HashGroup> getRootGroups() {
-        return null;
+        List<HashGroup> groups = new ArrayList<HashGroup>();
+        EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.VALID).entities();
+        try {
+            Iterator<HashGroup> iterator = entities.iterator();
+            if (iterator instanceof List)
+            	return (List<HashGroup>) iterator;
+
+            if (iterator != null) {
+                while (iterator.hasNext()) {
+                    groups.add(iterator.next());
+                }
+            }
+        } finally {
+            entities.close();
+        }
+        return groups;
     }
-    
+
     /**
-     * Get the hash groups for the given root group
+     * Get the hash groups for the given root group's name
      * 
      * @param parent
-     * @return 
+     * @return
      */
     public List<HashGroup> getSubGroups(String parent) {
-        return null;
+        List<HashGroup> groups = new ArrayList<HashGroup>();
+        EntityCursor<SubGroup> entities = dbAccessor.getSubGroupByParent().subIndex(parent).entities();
+        try {
+            for (SubGroup subGroup : entities) {
+                if (subGroup.getStatus().equals(Status.INVALID)) {
+                    getBlobHashes(subGroup.getName());
+                    subGroup = dbAccessor.getSubGroupByIndex().get(subGroup.getName());
+                }
+                
+                HashGroup hashGroup = new HashGroup(subGroup.getName(), 
+                        subGroup.getContentHash(), subGroup.getStatus());
+                groups.add(hashGroup);
+            }
+        } finally {
+            entities.close();
+        }
+        return groups;
     }
-    
+
     /**
-     * Get the blob hashes for the sub group name
+     * Get the blob hashes for the sub group's name
      * 
      * @param subGroupName
-     * @return 
+     * @return
      */
     public List<String> getBlobHashes(String subGroupName) {
-        return null;
-    }
-    
-    /**
-     * Represents a hash prefix (ie the first n digits) common to a list
-     * of hashes, and the hash of the text formed by those hashes.
-     * 
-     * For example, assume the following hashes were inserted into the blobstore:
-     *  0123456
-     *  012345c
-     *  0125432
-     *  cce2345
-     *  cceeeee
-     *  
-     *  Then, assuming n=3, there will be 2 root groups - 012 and cce.
-     * 
-     *  The 012 group would contain 2 groups - 012345 and 012543
-     * 
-     *  This forms a hierarchy as follows:
-     *  root (the blobstore itself)
-     *    - first level groups
-     *      - second level groups
-     *        - actual blobs
-     * 
-     *  The BlobStore itself and each group has a hash. The hash is formed by concentating
-     *  its children in the hierarchy above with their hashes in this form:
-     *  
-     *  {name},{hash}
-     *  
-     *  Where the name is the name of the group, and the hash is the hash of this group
-     * 
-     *  Note that if a hash exists it is assumed to be accurate. This means that
-     *  hashes must either be deleted or recalculated when new blobs are inserted
-     *  It will often be inefficient to recalculate hashes on every insertion, and 
-     *  would be unnecessary because syncs are only occasional, so instead we assume
-     *  they will only be recaculated on demand.
-     */
-    public class HashGroup {
-        private final String name;
-        private final String contentHash;
-
-        public HashGroup(String name, String contentHash) {
-            this.name = name;
-            this.contentHash = contentHash;
+        List<String> hashes = new ArrayList<String>();
+        EntityCursor<Blob> entities = dbAccessor.getBlobBySubGroup().subIndex(subGroupName).entities();
+        try {
+            for (Blob blob : entities) {
+                hashes.add(blob.getHash());
+            }
+            
+            String recalHash = Crypt.toHexFromHash(hashes);
+            String rootGroup = subGroupName.substring(0, nPrefGroup);
+            SubGroup subGroup = new SubGroup(subGroupName, rootGroup, recalHash, Status.VALID);
+            dbAccessor.getSubGroupByIndex().put(subGroup);
+        } finally {
+            entities.close();
         }
-
-        public String getContentHash() {
-            return contentHash;
-        }
-
-        public String getName() {
-            return name;
-        }        
+        return hashes;
     }
 }
