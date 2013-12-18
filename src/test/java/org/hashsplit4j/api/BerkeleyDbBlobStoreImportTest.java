@@ -34,13 +34,16 @@ public class BerkeleyDbBlobStoreImportTest {
 
     @Test
     public void testImport() {
-        assertEquals(0, blobStore.getRootGroups()); // just make sure starting with empty db
+        assertEquals(0, blobStore.getRootGroups().size()); // just make sure starting with empty db
         
         File dir = new File("src/test/resources/import-test");
+        System.out.println("importing from: " + dir.getAbsolutePath());
+        assertTrue(dir.exists());
+        assertTrue(dir.isDirectory());
         
         blobStore.importFiles(dir);
         
-        assertEquals(5, blobStore.getRootGroups()); // 1c, 2b, 2c, 2d, 2e, 5b
+        assertEquals(5, blobStore.getRootGroups().size() ); // 1c, 2b, 2c, 2d, 2e, 5b
     }
     
 }
