@@ -215,4 +215,19 @@ public class BerkeleyDbBlobStore implements BlobStore {
         }
         return hashes;
     }
+
+    /**
+     * Scan the given directory for sub folders (recursively) and files, and import
+     * any files into this blob store
+     * 
+     * DO NOT IMPORT:
+     *  - hidden files
+     *  - files that start with a dot
+     * 
+     * @param dir
+     * @return 
+     */
+    public int importFiles(File dir) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

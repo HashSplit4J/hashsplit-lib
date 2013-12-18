@@ -1,0 +1,12 @@
+@borderRadius: 5px;
+@hero1: #88c03f;
+@frameworkHighlightColor:  #FFF;
+@listIndent: 40px;
+@text1: #1C1D1F;
+@text2: #2F2F2F;
+@bg1: #2F2F2F;
+@hero2: #88c03f;
+@frameworkToolsInverseColor:  #414141;
+@frameworkHighlightInverseColor:  #FF9531;
+@frameworkToolsColor: #FFF;
+@border1: #DBDADA;
