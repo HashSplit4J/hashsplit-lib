@@ -50,6 +50,7 @@ public class BerkeleyDbBlobStoreTest {
 
     @After
     public void tearDownAfterClass() throws Exception {
+    	blobStore.closeEnv();
         blobStore.removeDbFiles(envHome);
     }
 
@@ -130,8 +131,18 @@ public class BerkeleyDbBlobStoreTest {
      */
     @Test
     public void testHashGroupsWithGenerateHashes() {
-        // Should not have generated any hash groups yet
+        String hash = Crypt.toHexFromText("1");
+        blobStore.setBlob(hash, "1".getBytes());
+        
+        hash = Crypt.toHexFromText("10");
+        blobStore.setBlob(hash, "XXX".getBytes());
+        
+        hash = Crypt.toHexFromText("1000");
+        blobStore.setBlob(hash, "This is value of the key 1000:".getBytes());
+        
         List<HashGroup> rootGroups = blobStore.getRootGroups();
+        // Should not have generated any hash groups yet
+        assertEquals(0, rootGroups.size());
         
         // Lets generate the hash groups
         blobStore.generateHashes();
@@ -162,13 +173,13 @@ public class BerkeleyDbBlobStoreTest {
     
     @Test
     public void testBlobHashes() {
+    	String hash = "f739349daff6e29994b561a6d402f4ebea8f7edb";
+    	// Put to berkeley-db
+        blobStore.setBlob(hash, "Berkeley DB Java Edition".getBytes());
+        
         String subGroup = "f73934";
-        System.out.println("\tGet all blobs in the sub group " + subGroup);
-        System.out.println("--------------------------------------------------------");
+        // Find all blob for the give sub group's name
         List<String> hashes = blobStore.getBlobHashes(subGroup);
-        for (String hash : hashes) {
-            System.out.println("Hash: " + hash);
-        }
         
         // Should have ONE hash f739349daff6e29994b561a6d402f4ebea8f7edb
         assertEquals(1, hashes.size());
