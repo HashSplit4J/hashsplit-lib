@@ -17,6 +17,7 @@
 package org.hashsplit4j.api;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -228,6 +229,32 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return 
      */
     public int importFiles(File dir) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    	if (!dir.exists())
+    		throw new RuntimeException("No such file or directory " + dir);
+    	
+    	int totalImports = 0;
+    	if (!dir.isDirectory()) {
+    		if (!dir.isHidden()) {
+    			String hash = dir.getName();
+    			if (hash.contains("."))
+    				throw new RuntimeException("The name should be calcaulated is SHA1 of its contents. "
+    						+ "It could not contains '.' character");
+    			
+    			byte[] contents = FileUtils.read(dir);
+    			
+    			// Put its contents into BerkeleyDB
+    			setBlob(hash, contents);
+    			// Only one Blob has been imported to BerkeleyDB
+    			totalImports += 1;
+    		}
+    	}
+    	
+    	File[] files = dir.listFiles();
+    	for (File file : files) {
+    		if (file.isDirectory())
+    			importFiles(dir);
+    	}
+    	
+    	return totalImports;
     }
 }
