@@ -17,7 +17,6 @@
 package org.hashsplit4j.api;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -238,7 +237,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
     			String hash = dir.getName();
     			if (hash.contains("."))
     				throw new RuntimeException("The name should be calcaulated is SHA1 of its contents. "
-    						+ "It could not contains '.' character");
+    						+ "It can not be contains '.' character");
     			
     			byte[] contents = FileUtils.read(dir);
     			
@@ -246,13 +245,13 @@ public class BerkeleyDbBlobStore implements BlobStore {
     			setBlob(hash, contents);
     			// Only one Blob has been imported to BerkeleyDB
     			totalImports += 1;
+    			return totalImports;
     		}
     	}
     	
     	File[] files = dir.listFiles();
     	for (File file : files) {
-    		if (file.isDirectory())
-    			importFiles(dir);
+            totalImports += importFiles(file);
     	}
     	
     	return totalImports;
