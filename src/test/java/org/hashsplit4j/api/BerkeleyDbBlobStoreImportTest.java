@@ -38,6 +38,16 @@ public class BerkeleyDbBlobStoreImportTest {
         
         int importted = blobStore.importFiles(dir);
         assertEquals(7, importted);
+    }
+    
+    @Test
+    public void testImporttedHasBlob() {
+    	File dir = new File("src/test/resources/import-test");
+        assertTrue(dir.exists());
+        assertTrue(dir.isDirectory());
+        
+        int importted = blobStore.importFiles(dir);
+        assertEquals(7, importted);
         
         String hash = "1c8e930f68f4c260760e0d2e238e905a978e4259";
         assertTrue(blobStore.hasBlob(hash));
@@ -62,7 +72,7 @@ public class BerkeleyDbBlobStoreImportTest {
     }
     
     @Test
-    public void testImporttedHashBlob() {
+    public void testImporttedGetBlob() {
         File dir = new File("src/test/resources/import-test");
         assertTrue(dir.exists());
         assertTrue(dir.isDirectory());
@@ -85,7 +95,7 @@ public class BerkeleyDbBlobStoreImportTest {
     }
 
     @Test
-    public void testImport() {
+    public void testImportFiles() {
         
         assertEquals(0, blobStore.getRootGroups().size()); // just make sure starting with empty db
         
@@ -104,4 +114,12 @@ public class BerkeleyDbBlobStoreImportTest {
         assertEquals(7, blobStore.getRootGroups().size()); // 1c8, 1cf, 2bf, 2cb, 2d0, 2e2, 5b8
     }
     
+    @Test
+    public void testVerifySHA1Text() {
+    	String text = "5b8ddd0ef0d184b6958b0526ced423fb74b70fc3";
+    	assertEquals(true, FileUtils.isSHA1(text));
+    	
+    	text = "hibernate_annotations.pdf";
+    	assertEquals(false, FileUtils.isSHA1(text));
+    }
 }

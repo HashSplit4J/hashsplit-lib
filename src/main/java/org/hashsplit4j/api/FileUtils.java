@@ -63,4 +63,19 @@ public class FileUtils {
 		
 		return buffer;
 	}
+	
+	/**
+	 * SHA1 verifier
+	 * 
+	 * @param text
+	 * 			- the text want to check is SHA1 or not
+	 * @return
+	 * 			- TRUE/FALSE
+	 */
+	public static boolean isSHA1(String text) {
+		if (text == null || text.length() < 0)
+			return false;
+		
+		return text.matches("[a-fA-F0-9]{40}");
+	}
 }

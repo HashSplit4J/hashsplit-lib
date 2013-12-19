@@ -235,16 +235,18 @@ public class BerkeleyDbBlobStore implements BlobStore {
     	if (!dir.isDirectory()) {
     		if (!dir.isHidden()) {
     			String hash = dir.getName();
-    			if (hash.contains("."))
-    				throw new RuntimeException("The name should be calcaulated is SHA1 of its contents. "
-    						+ "It can not be contains '.' character");
+    			if (FileUtils.isSHA1(hash)) {
+    				byte[] contents = FileUtils.read(dir);
+        			
+        			// Put its contents into BerkeleyDB
+        			setBlob(hash, contents);
+        			// Only one Blob has been imported to BerkeleyDB
+        			totalImports += 1;
+    			} else {
+    				System.err.println("The text " + hash + " is not SHA1 or MD5 string, "
+    						+ "It should get SHA1 of its contents.");
+    			}
     			
-    			byte[] contents = FileUtils.read(dir);
-    			
-    			// Put its contents into BerkeleyDB
-    			setBlob(hash, contents);
-    			// Only one Blob has been imported to BerkeleyDB
-    			totalImports += 1;
     			return totalImports;
     		}
     	}
