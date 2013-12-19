@@ -4,7 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +34,7 @@ public class BerkeleyDbBlobStoreImportTest {
     }
     
     @Test
-    public void testImportted() {
+    public void testImportted() throws FileNotFoundException {
         File dir = new File("src/test/resources/import-test");
         assertTrue(dir.exists());
         assertTrue(dir.isDirectory());
@@ -41,7 +44,7 @@ public class BerkeleyDbBlobStoreImportTest {
     }
     
     @Test
-    public void testImporttedHasBlob() {
+    public void testImporttedHasBlob() throws FileNotFoundException {
     	File dir = new File("src/test/resources/import-test");
         assertTrue(dir.exists());
         assertTrue(dir.isDirectory());
@@ -72,7 +75,7 @@ public class BerkeleyDbBlobStoreImportTest {
     }
     
     @Test
-    public void testImporttedGetBlob() {
+    public void testImporttedGetBlob() throws IOException {
         File dir = new File("src/test/resources/import-test");
         assertTrue(dir.exists());
         assertTrue(dir.isDirectory());
@@ -82,7 +85,7 @@ public class BerkeleyDbBlobStoreImportTest {
         
         String hash = "1c8e930f68f4c260760e0d2e238e905a978e4259";
         File file = new File("src/test/resources/import-test/1c8e93/0f68f4/c26076/0e0d2e/238e90/5a978e/1c8e930f68f4c260760e0d2e238e905a978e4259");
-        byte[] contents = FileUtils.read(file);
+        byte[] contents = FileUtils.readFileToByteArray(file);
         
         String actualContents = new String(blobStore.getBlob(hash));
         String expertContents = new String(contents);
@@ -95,7 +98,7 @@ public class BerkeleyDbBlobStoreImportTest {
     }
 
     @Test
-    public void testImportFiles() {
+    public void testImportFiles() throws FileNotFoundException {
         
         assertEquals(0, blobStore.getRootGroups().size()); // just make sure starting with empty db
         
@@ -112,14 +115,5 @@ public class BerkeleyDbBlobStoreImportTest {
         blobStore.generateHashes();
         
         assertEquals(7, blobStore.getRootGroups().size()); // 1c8, 1cf, 2bf, 2cb, 2d0, 2e2, 5b8
-    }
-    
-    @Test
-    public void testVerifySHA1Text() {
-    	String text = "5b8ddd0ef0d184b6958b0526ced423fb74b70fc3";
-    	assertEquals(true, FileUtils.isSHA1(text));
-    	
-    	text = "hibernate_annotations.pdf";
-    	assertEquals(false, FileUtils.isSHA1(text));
     }
 }
