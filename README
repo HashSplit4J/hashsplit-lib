@@ -19,7 +19,7 @@ dependency as normal, and add the milton repo..
 
     <repositories>
         <repository>
-            <id>ettrema-repo</id>
+            <id>milton-repo</id>
             <url>http://milton.io/maven</url>
         </repository>
     </repositories>   
