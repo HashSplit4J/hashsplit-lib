@@ -5,10 +5,29 @@ For discussions please see the group:
 spliffy-users@googlegroups.com
 https://groups.google.com/d/forum/spliffy-users
 
-Latest build:
-    TBA
+Latest build: 2.1.1
+    http://milton.io/maven/hashsplit4j/hashsplit4j-lib/2.1.1/hashsplit4j-lib-2.1.1.jar
 
+Maven:
+The hashsplit4j jar is published to the milton.io maven repo. To use it add the 
+dependency as normal, and add the milton repo..
+     <dependencies>
+        ...
+        <dependency>
+            <groupId>hashsplit4j</groupId>
+            <artifactId>hashsplit4j-lib</artifactId>
+            <version>2.1.1</version>
+        </dependency>
+    </dependencies>
 
+    <repositories>
+        <repository>
+            <id>ettrema-repo</id>
+            <url>http://milton.io/maven</url>
+        </repository>
+    </repositories>   
+
+Efficiency:
 By "efficient" I mean:
 1. Efficient with respect to network bandwidth because only changed data needs to be syncronized
 2. Efficient with respect to storage, since file versions can be persisted with only changes across versions being stored
@@ -16,19 +35,34 @@ By "efficient" I mean:
 
 This library is inspired by BUP - https://github.com/apenwarr/bup/blob/master/DESIGN
 
-One major design choice, different to BUP, is that instead of implementing a tree of fanouts (as per the BUP design documentation) I've opted for a single level of chunk grouping. I think this makes it much simpler to parse a file, and also much simpler to use the result of the parse. I also think that a single level of grouping will be sufficient for minimising netwok traffic, provided we are more selective then BUP with grouping...
+One major design choice, different to BUP, is that instead of implementing a tree of 
+fanouts (as per the BUP design documentation) I've opted for a single level of chunk 
+grouping. I think this makes it much simpler to parse a file, and also much simpler 
+to use the result of the parse. I also think that a single level of grouping will 
+be sufficient for minimising netwok traffic, provided we are more selective then 
+BUP with grouping...
 
-BUP looks for boundaries by matching the lowest 13 bits of the rolling checksum, and then groups those chunks when the lowest 17bits are set. This means that the grouping is on average every 15 chunks (4bits=15), which seems to be too granular. I think we would probably want to group sets of 256, ie matching 21 bits. Given that the chunks information ends up 0.25% of the total file size, this means that the chunk groups will be 1/256 * 0.25% = 0.001% of total file size, about 10k for a 1Gb file. So I don't think we need to be any more granular then that.
+BUP looks for boundaries by matching the lowest 13 bits of the rolling checksum, 
+and then groups those chunks when the lowest 17bits are set. This means that the 
+grouping is on average every 15 chunks (4bits=15), which seems to be too granular. 
+I think we would probably want to group sets of 256, ie matching 21 bits. Given 
+that the chunks information ends up 0.25% of the total file size, this means that 
+the chunk groups will be 1/256 * 0.25% = 0.001% of total file size, about 10k for 
+a 1Gb file. So I don't think we need to be any more granular then that.
 
 The main parsing class is Parser, which you use like this:
         InputStream in = Scratch.class.getResourceAsStream(fname);
         //InputStream in = Scratch.class.getResourceAsStream("test1.txt");
-        MemoryHashStore store = new MemoryHashStore();
+        MemoryHashStore hashStore = new MemoryHashStore();
+        MemoryBlobStore blobStore = new MemoryBlobStore();
         Parser parser = new Parser();
-        List<Long> megaCrcs = parser.parse(in, store);
+        List<Long> megaCrcs = parser.parse(in, blobStore, hashStore);
 
 
-Note that there is an abstraction layer for storing the parse result - HashStore:
+Note that there are 2 abstraction layers for storing the parse result 
+- HashStore: for storing the tree of blobs in groups which is the series of chunks
+or blobs in the file
+- BlobStore: for storing and retrieving the actual chunks/blobs
 
 public interface HashStore {
     public void onChunk(long crc, int start, int finish, byte[] bytes);
@@ -37,14 +71,23 @@ public interface HashStore {
     public byte[] getBlob(Long crc);   
 }
 
-And there's a simple implementation for development - MemoryHashStore. A proper implementation will probably want to persist the data to a file, perhaps with some sort of index.
+public interface BlobStore {    
+    void setBlob(String hash, byte[] bytes);    
+    byte[] getBlob(String hash);        
+    boolean hasBlob(String hash);    
+}
 
 
 Files can be reconstituted with the Combiner class:
         Combiner combiner = new Combiner();
+        MemoryHashStore hashStore = new MemoryHashStore();
+        MemoryBlobStore blobStore = new MemoryBlobStore();
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        combiner.combine(megaCrcs, store, bout);
+        combiner.combine(megaCrcs, blobStore, hashStore, bout);
 
-
+There is now a HttpBlobStore which can store blobs to a HTTP server. There is also
+a module in the hashsplit4j project which provides such an HTTP server. Work is
+currently under way (as of 1/1/2014) to implement efficient syncronisation between
+these http servers (rsync is hell with terabytes of blobs)
 
 
