@@ -1,9 +1,6 @@
-This is a library for splitting files into chunks which are fairly stable with file changes, which
+This is a library for splitting files into chunks which are fairly stable with respect to file changes, which 
 allows those chunks to be used as the basis for efficient file syncronisation.
 
-For discussions please see the group:
-spliffy-users@googlegroups.com
-https://groups.google.com/d/forum/spliffy-users
 
 Latest build: 2.1.1
     http://milton.io/maven/hashsplit4j/hashsplit4j-lib/2.1.1/hashsplit4j-lib-2.1.1.jar
