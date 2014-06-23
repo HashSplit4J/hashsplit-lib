@@ -75,15 +75,20 @@ public class CachingBlobStore implements BlobStore {
 
     @Override
     public boolean hasBlob(String hash) {
-        if( cache.containsKey(hash)) {
-            hits++;
-            return true;
-        }
-        boolean b = blobStore.hasBlob(hash);
-        if( b) {
-            misses++;
-        }
-        return b;
+        byte[] arr = getBlob(hash);
+        return arr != null;
+        
+        // use getBlob because otherwise hasBlob wont get cached
+        
+//        if( cache.containsKey(hash)) {
+//            hits++;
+//            return true;
+//        }
+//        boolean b = blobStore.hasBlob(hash);
+//        if( b) {
+//            misses++;
+//        }
+//        return b;
     }
 
     public int getCapacity() {
