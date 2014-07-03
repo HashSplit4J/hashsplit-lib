@@ -36,8 +36,8 @@ public class HttpBlobStore implements BlobStore {
     private final CredentialsProvider credsProvider;
     private BlobStore secondaryBlobStore;
     private int timeout = 4000;
-    private String server;
-    private int port;
+    private final String server;
+    private final int port;
     private Path basePath;
     private long gets;
     private long sets;
@@ -45,6 +45,8 @@ public class HttpBlobStore implements BlobStore {
     private boolean secondaryInUse;
 
     public HttpBlobStore(String server, int port, String rootPath, String username, String password) {
+        this.server = server;
+        this.port = port;
         this.basePath = Path.path(rootPath);
         credsProvider = new BasicCredentialsProvider();
         credsProvider.setCredentials(
@@ -194,6 +196,8 @@ public class HttpBlobStore implements BlobStore {
                     if (status >= 200 && status < 300) {
                         HttpEntity entity = response.getEntity();
                         return entity != null ? EntityUtils.toByteArray(entity) : new byte[0];
+                    } else if( status == 404 ) {
+                        return null;
                     } else {
                         throw new ClientProtocolException("Unexpected response status: " + status);
                     }
@@ -203,10 +207,8 @@ public class HttpBlobStore implements BlobStore {
             byte[] responseBody = client.execute(m, responseHandler);
             return responseBody;
 
-        } catch (URISyntaxException ex) {
-            throw new Exception(ex);
-        } catch (IOException ex) {
-            throw new Exception(ex);
+        } catch (URISyntaxException | IOException ex) {
+            throw new Exception("server=" + server + "; port=" + port + "; path=" + path, ex);
         } finally {
             IOUtils.closeQuietly(client);
         }
@@ -236,10 +238,8 @@ public class HttpBlobStore implements BlobStore {
                 throw new Exception("Unexpected response status: " + status);
             }
 
-        } catch (URISyntaxException ex) {
-            throw new Exception(ex);
-        } catch (IOException ex) {
-            throw new Exception(ex);
+        } catch (URISyntaxException | IOException ex) {
+            throw new Exception("server=" + server + "; port=" + port + "; path=" + path, ex);
         } finally {
             IOUtils.closeQuietly(response);
             IOUtils.closeQuietly(client);
