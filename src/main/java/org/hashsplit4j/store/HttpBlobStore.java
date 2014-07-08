@@ -8,9 +8,11 @@ import org.apache.commons.io.IOUtils;
 import org.hashsplit4j.api.BlobStore;
 import org.slf4j.LoggerFactory;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.ResponseHandler;
@@ -18,7 +20,10 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -44,6 +49,10 @@ public class HttpBlobStore implements BlobStore {
 
     private boolean secondaryInUse;
 
+    private final HttpHost preemptiveAuthTarget;
+    private final AuthCache authCache = new BasicAuthCache();
+    private final BasicScheme basicAuth = new BasicScheme();
+
     public HttpBlobStore(String server, int port, String rootPath, String username, String password) {
         this.server = server;
         this.port = port;
@@ -52,6 +61,9 @@ public class HttpBlobStore implements BlobStore {
         credsProvider.setCredentials(
                 new AuthScope(server, port),
                 new UsernamePasswordCredentials(username, password));
+
+        preemptiveAuthTarget = new HttpHost(server, port, "http");
+        authCache.put(preemptiveAuthTarget, basicAuth);
     }
 
     @Override
@@ -177,6 +189,9 @@ public class HttpBlobStore implements BlobStore {
     }
 
     public byte[] get(String path) throws Exception {
+        HttpClientContext localContext = HttpClientContext.create();
+        localContext.setAuthCache(authCache);
+        
         RequestConfig reqConfig = RequestConfig.custom()
                 .setSocketTimeout(timeout)
                 .setConnectTimeout(timeout)
@@ -196,7 +211,7 @@ public class HttpBlobStore implements BlobStore {
                     if (status >= 200 && status < 300) {
                         HttpEntity entity = response.getEntity();
                         return entity != null ? EntityUtils.toByteArray(entity) : new byte[0];
-                    } else if( status == 404 ) {
+                    } else if (status == 404) {
                         return null;
                     } else {
                         throw new ClientProtocolException("Unexpected response status: " + status);
@@ -204,7 +219,7 @@ public class HttpBlobStore implements BlobStore {
                 }
 
             };
-            byte[] responseBody = client.execute(m, responseHandler);
+            byte[] responseBody = client.execute(m, responseHandler, localContext);
             return responseBody;
 
         } catch (URISyntaxException | IOException ex) {
@@ -215,10 +230,13 @@ public class HttpBlobStore implements BlobStore {
     }
 
     public void put(String path, byte[] bytes) throws Exception {
+        HttpClientContext localContext = HttpClientContext.create();
+        localContext.setAuthCache(authCache);
+
         RequestConfig reqConfig = RequestConfig.custom()
                 .setSocketTimeout(timeout)
                 .setConnectTimeout(timeout)
-                .build();        
+                .build();
         CloseableHttpClient client = HttpClients.custom()
                 .setDefaultCredentialsProvider(credsProvider)
                 .setDefaultRequestConfig(reqConfig)
@@ -230,7 +248,7 @@ public class HttpBlobStore implements BlobStore {
             HttpEntity requestEntity = new ByteArrayEntity(bytes);
             m.setEntity(requestEntity);
 
-            response = client.execute(m);
+            response = client.execute(m, localContext);
             int status = response.getStatusLine().getStatusCode();
             if (status >= 200 && status < 300) {
                 // all good
