@@ -121,7 +121,12 @@ public class HttpBlobStore implements BlobStore {
         return sets;
     }
 
+    @Override
+    public String toString() {
+        return "HttpBlobStore: " + server + ":" + port;
+    }
 
+    
 
     
 
@@ -137,6 +142,7 @@ public class HttpBlobStore implements BlobStore {
                 .setDefaultCredentialsProvider(credsProvider)
                 .setDefaultRequestConfig(reqConfig)
                 .build();
+        long tm = System.currentTimeMillis();
         try {
             URI uri = new URI("http", null, server, port, path, null, null);
             HttpGet m = new HttpGet(uri);
@@ -158,7 +164,9 @@ public class HttpBlobStore implements BlobStore {
             };
             byte[] responseBody = client.execute(m, responseHandler, localContext);
             return responseBody;
-
+        } catch(java.net.SocketTimeoutException ex) {
+            tm = System.currentTimeMillis() - tm;
+            throw new RuntimeException("Socket timeout: server=" + server + "; port=" + port + "Configured timeout=" + timeout + " actual time=" + tm + "ms" , ex);
         } catch (URISyntaxException | IOException ex) {
             throw new RuntimeException("server=" + server + "; port=" + port + "; path=" + path, ex);
         } finally {

@@ -19,12 +19,11 @@ public class HABlobStore implements BlobStore {
 
     private BlobStore curPrimary;
     private BlobStore curSecondary;
-    
-    
+
     public HABlobStore(BlobStore primary, BlobStore secondary) {
         this.primary = primary;
         this.secondary = secondary;
-        
+
         curPrimary = primary;
         curSecondary = secondary;
     }
@@ -34,7 +33,10 @@ public class HABlobStore implements BlobStore {
         try {
             curPrimary.setBlob(hash, bytes);
         } catch (Exception ex) {
+            log.warn("setBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage());
+            log.warn("try on seconday: " + curSecondary + " ...");            
             curSecondary.setBlob(hash, bytes);
+            log.warn("setBlob succeeded on secondary");
             switchStores();
         }
     }
@@ -49,17 +51,23 @@ public class HABlobStore implements BlobStore {
     public byte[] getBlob(String hash) {
         try {
             byte[] arr = curPrimary.getBlob(hash);
-            if( arr == null ) {
-                if( trySecondaryWhenNotFound && curSecondary != null ) {
+            if (arr == null) {
+                if (trySecondaryWhenNotFound && curSecondary != null) {
                     log.info("Not found in primary, and secondaryInUse is true, so try secondary");
                     arr = curSecondary.getBlob(hash);
                 }
             }
             return arr;
         } catch (Exception ex) {
-            // try again
-            log.warn("Failed to lookup blob, try again once...", ex);
-            byte[] arr = curSecondary.getBlob(hash);
+            log.warn("getBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage());
+            log.warn("try on seconday: " + curSecondary + " ...");            
+            byte[] arr;
+            try {
+                arr = curSecondary.getBlob(hash);
+                log.warn("getBlob succeeded on secondary");
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to lookup from secondary: " + secondary, e);
+            }
             switchStores();
             return arr;
         }
@@ -73,17 +81,18 @@ public class HABlobStore implements BlobStore {
         this.trySecondaryWhenNotFound = trySecondaryWhenNotFound;
     }
 
-    
-
     private synchronized void switchStores() {
-        if( secondary == null ) {
+        if (secondary == null) {
+            log.warn("switchStores: Cant switch because there is no configured secondary");
             // Cant switch
-            return ;
+            return;
         }
+        log.warn("Switching stores due to primary failure...");
         BlobStore newPrimary = curSecondary;
         BlobStore newSecondary = curPrimary;
-        
+
         this.curPrimary = newPrimary;
         this.curSecondary = newSecondary;
+        log.warn("Done switching stores. New primary=" + curPrimary + " New seconday=" + curSecondary);
     }
 }
