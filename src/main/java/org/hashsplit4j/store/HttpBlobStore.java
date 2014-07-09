@@ -96,23 +96,6 @@ public class HttpBlobStore implements BlobStore {
 
     @Override
     public boolean hasBlob(String hash) {
-        try {
-            return hasBlobSingle(hash);
-        } catch (Exception ex) {
-            // try again
-            log.warn("Failed to lookup blob, try again once...", ex);
-            try {
-                return hasBlobSingle(hash);
-            } catch (Exception ex1) {
-                if (secondaryBlobStore != null) {
-                    return secondaryBlobStore.hasBlob(hash);
-                }
-                throw new RuntimeException(ex1);
-            }
-        }
-    }
-
-    private boolean hasBlobSingle(String hash) throws Exception {
         byte[] bytes = getBlob(hash);
         return bytes != null;
     }
@@ -120,7 +103,14 @@ public class HttpBlobStore implements BlobStore {
     @Override
     public byte[] getBlob(String hash) {
         try {
-            return getBlobSingle(hash);
+            byte[] arr = getBlobSingle(hash);
+            if( arr == null ) {
+                if( secondaryInUse && secondaryBlobStore != null ) {
+                    log.info("Not found in primary, and secondaryInUse is true, so try secondary");
+                    arr = secondaryBlobStore.getBlob(hash);
+                }
+            }
+            return arr;
         } catch (Exception ex) {
             // try again
             log.warn("Failed to lookup blob, try again once...", ex);
@@ -187,6 +177,12 @@ public class HttpBlobStore implements BlobStore {
     public boolean isSecondaryInUse() {
         return secondaryInUse;
     }
+
+    public void setSecondaryInUse(boolean secondaryInUse) {
+        this.secondaryInUse = secondaryInUse;
+    }
+    
+    
 
     public byte[] get(String path) throws Exception {
         HttpClientContext localContext = HttpClientContext.create();
