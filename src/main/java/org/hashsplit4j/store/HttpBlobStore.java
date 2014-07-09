@@ -39,7 +39,6 @@ public class HttpBlobStore implements BlobStore {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(CachingBlobStore.class);
 
     private final CredentialsProvider credsProvider;
-    private BlobStore secondaryBlobStore;
     private int timeout = 2000;
     private final String server;
     private final int port;
@@ -47,7 +46,6 @@ public class HttpBlobStore implements BlobStore {
     private long gets;
     private long sets;
 
-    private boolean secondaryInUse;
 
     private final HttpHost preemptiveAuthTarget;
     private final AuthCache authCache = new BasicAuthCache();
@@ -71,27 +69,8 @@ public class HttpBlobStore implements BlobStore {
         if (hasBlob(hash)) {
             return;
         }
-        try {
-            setBlobSingle(hash, bytes);
-        } catch (Exception ex) {
-            log.warn("Failed to setBlob, try once again...");
-            try {
-                setBlobSingle(hash, bytes);
-            } catch (Exception ex1) {
-                if (secondaryBlobStore != null) {
-                    log.warn("Failed to setBlob again on primary store, so use secondary", ex1);
-                    secondaryBlobStore.setBlob(hash, bytes);
-                    secondaryInUse = true;
-                } else {
-                    throw new RuntimeException(ex1);
-                }
-            }
-        }
-    }
-
-    private void setBlobSingle(String hash, byte[] bytes) throws Exception {
         Path destPath = basePath.child(hash + "");
-        put(destPath.toString(), bytes);
+        put(destPath.toString(), bytes);        
     }
 
     @Override
@@ -102,27 +81,8 @@ public class HttpBlobStore implements BlobStore {
 
     @Override
     public byte[] getBlob(String hash) {
-        try {
-            byte[] arr = getBlobSingle(hash);
-            if( arr == null ) {
-                if( secondaryInUse && secondaryBlobStore != null ) {
-                    log.info("Not found in primary, and secondaryInUse is true, so try secondary");
-                    arr = secondaryBlobStore.getBlob(hash);
-                }
-            }
-            return arr;
-        } catch (Exception ex) {
-            // try again
-            log.warn("Failed to lookup blob, try again once...", ex);
-            try {
-                return getBlobSingle(hash);
-            } catch (Exception ex1) {
-                if (secondaryBlobStore != null) {
-                    return secondaryBlobStore.getBlob(hash);
-                }
-                throw new RuntimeException(ex1);
-            }
-        }
+        Path destPath = basePath.child(hash + "");
+        return get(destPath.toString());
     }
 
     private byte[] getBlobSingle(String hash) throws Exception {
@@ -161,30 +121,11 @@ public class HttpBlobStore implements BlobStore {
         return sets;
     }
 
-    public BlobStore getSecondaryBlobStore() {
-        return secondaryBlobStore;
-    }
 
-    public void setSecondaryBlobStore(BlobStore secondaryBlobStore) {
-        this.secondaryBlobStore = secondaryBlobStore;
-    }
 
-    /**
-     * This is true if there has been at least 1 put to the secondary blob store
-     *
-     * @return
-     */
-    public boolean isSecondaryInUse() {
-        return secondaryInUse;
-    }
-
-    public void setSecondaryInUse(boolean secondaryInUse) {
-        this.secondaryInUse = secondaryInUse;
-    }
-    
     
 
-    public byte[] get(String path) throws Exception {
+    public byte[] get(String path) {
         HttpClientContext localContext = HttpClientContext.create();
         localContext.setAuthCache(authCache);
         
@@ -219,13 +160,13 @@ public class HttpBlobStore implements BlobStore {
             return responseBody;
 
         } catch (URISyntaxException | IOException ex) {
-            throw new Exception("server=" + server + "; port=" + port + "; path=" + path, ex);
+            throw new RuntimeException("server=" + server + "; port=" + port + "; path=" + path, ex);
         } finally {
             IOUtils.closeQuietly(client);
         }
     }
 
-    public void put(String path, byte[] bytes) throws Exception {
+    public void put(String path, byte[] bytes) {
         HttpClientContext localContext = HttpClientContext.create();
         localContext.setAuthCache(authCache);
 
@@ -249,11 +190,11 @@ public class HttpBlobStore implements BlobStore {
             if (status >= 200 && status < 300) {
                 // all good
             } else {
-                throw new Exception("Unexpected response status: " + status);
+                throw new RuntimeException("Unexpected response status: " + status);
             }
 
         } catch (URISyntaxException | IOException ex) {
-            throw new Exception("server=" + server + "; port=" + port + "; path=" + path, ex);
+            throw new RuntimeException("server=" + server + "; port=" + port + "; path=" + path, ex);
         } finally {
             IOUtils.closeQuietly(response);
             IOUtils.closeQuietly(client);
