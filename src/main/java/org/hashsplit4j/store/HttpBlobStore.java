@@ -40,7 +40,7 @@ public class HttpBlobStore implements BlobStore {
 
     private final CredentialsProvider credsProvider;
     private BlobStore secondaryBlobStore;
-    private int timeout = 4000;
+    private int timeout = 2000;
     private final String server;
     private final int port;
     private Path basePath;
