@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
  */
 public class HABlobStore implements BlobStore {
 
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(CachingBlobStore.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(HABlobStore.class);
 
     private final BlobStore primary;
     private final BlobStore secondary;
@@ -53,7 +53,7 @@ public class HABlobStore implements BlobStore {
             byte[] arr = curPrimary.getBlob(hash);
             if (arr == null) {
                 if (trySecondaryWhenNotFound && curSecondary != null) {
-                    log.info("Not found in primary, and secondaryInUse is true, so try secondary");
+                    log.info("Not found in primary, and trySecondaryWhenNotFound is true, so try secondary");
                     arr = curSecondary.getBlob(hash);
                 }
             }
