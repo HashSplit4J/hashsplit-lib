@@ -33,7 +33,7 @@ public class BerkeleyDbBlobStoreImportTest {
         blobStore.removeDbFiles(envHome);
     }
     
-    @Test
+    //@Test
     public void testImportted() throws FileNotFoundException {
         File dir = new File("src/test/resources/import-test");
         assertTrue(dir.exists());
@@ -43,7 +43,7 @@ public class BerkeleyDbBlobStoreImportTest {
         assertEquals(7, importted);
     }
     
-    @Test
+    //@Test
     public void testImporttedHasBlob() throws FileNotFoundException {
     	File dir = new File("src/test/resources/import-test");
         assertTrue(dir.exists());
@@ -74,7 +74,7 @@ public class BerkeleyDbBlobStoreImportTest {
         assertTrue(blobStore.hasBlob(hash));
     }
     
-    @Test
+    //@Test
     public void testImporttedGetBlob() throws IOException {
         File dir = new File("src/test/resources/import-test");
         assertTrue(dir.exists());
@@ -97,7 +97,7 @@ public class BerkeleyDbBlobStoreImportTest {
         System.out.println("***********************************************************");
     }
 
-    @Test
+    //@Test
     public void testImportFiles() throws FileNotFoundException {
         
         assertEquals(0, blobStore.getRootGroups().size()); // just make sure starting with empty db
