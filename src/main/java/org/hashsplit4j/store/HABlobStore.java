@@ -1,5 +1,7 @@
 package org.hashsplit4j.store;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.hashsplit4j.api.BlobStore;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +16,7 @@ public class HABlobStore implements BlobStore {
 
     private final BlobStore primary;
     private final BlobStore secondary;
+    private final ExecutorService exService;
 
     private boolean trySecondaryWhenNotFound = true;
 
@@ -26,19 +29,28 @@ public class HABlobStore implements BlobStore {
 
         curPrimary = primary;
         curSecondary = secondary;
+
+        exService = Executors.newFixedThreadPool(5); // 5 threads
     }
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
         try {
             curPrimary.setBlob(hash, bytes);
+            enqueue(hash, bytes, curSecondary);
         } catch (Exception ex) {
             log.warn("setBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage());
-            log.warn("try on seconday: " + curSecondary + " ...");            
+            log.warn("try on seconday: " + curSecondary + " ...");
             curSecondary.setBlob(hash, bytes);
+            enqueue(hash, bytes, curPrimary);
             log.warn("setBlob succeeded on secondary");
             switchStores();
         }
+    }
+
+    private void enqueue(String hash, byte[] bytes, BlobStore target) {
+        InsertBlobRunnable r = new InsertBlobRunnable(hash, bytes, target);
+        exService.submit(r);
     }
 
     @Override
@@ -60,7 +72,7 @@ public class HABlobStore implements BlobStore {
             return arr;
         } catch (Exception ex) {
             log.warn("getBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage());
-            log.warn("try on seconday: " + curSecondary + " ...");            
+            log.warn("try on seconday: " + curSecondary + " ...");
             byte[] arr;
             try {
                 arr = curSecondary.getBlob(hash);
@@ -94,5 +106,28 @@ public class HABlobStore implements BlobStore {
         this.curPrimary = newPrimary;
         this.curSecondary = newSecondary;
         log.warn("Done switching stores. New primary=" + curPrimary + " New seconday=" + curSecondary);
+    }
+
+    public class InsertBlobRunnable implements Runnable {
+
+        private final String hash;
+        private final byte[] bytes;
+        private final BlobStore blobStore;
+
+        public InsertBlobRunnable(String hash, byte[] bytes, BlobStore blobStore) {
+            this.hash = hash;
+            this.bytes = bytes;
+            this.blobStore = blobStore;
+        }
+
+        @Override
+        public void run() {
+            try {
+                blobStore.setBlob(hash, bytes);
+            } catch (Throwable e) {
+                log.error("Exception inserting blob into store:" + blobStore, e);
+            }
+        }
+
     }
 }
