@@ -12,11 +12,14 @@ import static org.junit.Assert.*;
  */
 public class Scratch {
 
-    //@Test
+    @Test
     public void bitmapTest() throws IOException {
+        long size = 218870l;
         Map<String, MemoryBlobStore.Chunk> map1 = processFile("platypus.bmp", 218870);
-        Map<String, MemoryBlobStore.Chunk> map2 = processFile("platypus-mod.bmp", 218870);
-        checkCommon(map1, map2, 80);
+        System.out.println("blobs: " + map1.size());
+        System.out.println("avg size: " + size / map1.size() );
+//        Map<String, MemoryBlobStore.Chunk> map2 = processFile("platypus-mod.bmp", 218870);
+//        checkCommon(map1, map2, 80);
     }
 
     //@Test
@@ -26,7 +29,7 @@ public class Scratch {
         checkCommon(map1, map2, 80);
     }
 
-    @Test
+    //@Test
     public void testFileBlobStore() throws IOException {
         MemoryHashStore hashStore = new MemoryHashStore();
         File file = new File("src/test/resources/org/hashsplit4j/api/test1.txt");

@@ -39,7 +39,7 @@ public class HttpBlobStore implements BlobStore {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(CachingBlobStore.class);
 
     private final CredentialsProvider credsProvider;
-    private int timeout = 2000;
+    private int timeout = 5000;
     private final String server;
     private final int port;
     private Path basePath;

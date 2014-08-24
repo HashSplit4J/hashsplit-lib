@@ -39,16 +39,18 @@ public class HABlobStore implements BlobStore {
             curPrimary.setBlob(hash, bytes);
             enqueue(hash, bytes, curSecondary);
         } catch (Exception ex) {
-            log.warn("setBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage());
+            log.warn("setBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage() + " blob size: " + bytes.length);
             log.warn("try on seconday: " + curSecondary + " ...");
             curSecondary.setBlob(hash, bytes);
             enqueue(hash, bytes, curPrimary);
             log.warn("setBlob succeeded on secondary");
             switchStores();
         }
+//        log.info("Finished setBlob: " + hash);
     }
 
     private void enqueue(String hash, byte[] bytes, BlobStore target) {
+//        log.info("enqueue: " + hash);
         InsertBlobRunnable r = new InsertBlobRunnable(hash, bytes, target);
         exService.submit(r);
     }
@@ -123,6 +125,7 @@ public class HABlobStore implements BlobStore {
         @Override
         public void run() {
             try {
+                //log.info("Insert blob in other " + hash);
                 blobStore.setBlob(hash, bytes);
             } catch (Throwable e) {
                 log.error("Exception inserting blob into store:" + blobStore, e);
