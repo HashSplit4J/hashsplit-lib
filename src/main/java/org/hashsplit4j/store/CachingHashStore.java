@@ -30,7 +30,7 @@ public class CachingHashStore implements HashStore {
     public void setChunkFanout(String hash, List<String> blobHashes, long actualContentLength) {
         hashStore.setChunkFanout(hash, blobHashes, actualContentLength);
         FanoutImpl i = new FanoutImpl(blobHashes, actualContentLength);
-        fileCache.putIfAbsent(hash, i);         
+        chunkCache.putIfAbsent(hash, i);         
     }
 
     @Override

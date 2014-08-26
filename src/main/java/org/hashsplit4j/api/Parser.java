@@ -125,9 +125,7 @@ public class Parser {
                     if ((x & FANOUT_MASK) == FANOUT_MASK) {
                         String fanoutCrcVal = toHex(fanoutCrc);
                         fanoutHashes.add(fanoutCrcVal);
-                        if (log.isTraceEnabled()) {
-                            log.trace("set fanout: " + fanoutCrcVal + " length=" + fanoutLength);
-                        }
+                        //log.info("set chunk fanout: {} length={}", fanoutCrcVal, fanoutLength);
                         hashStore.setChunkFanout(fanoutCrcVal, blobHashes, fanoutLength);
                         fanoutLength = 0;
                         fanoutCrc.reset();
@@ -147,9 +145,8 @@ public class Parser {
         numBlobs++;
         blobHashes.add(blobCrcHex);
         String fanoutCrcVal = toHex(fanoutCrc);
-        if (log.isTraceEnabled()) {
-            log.trace("set terminal fanout: " + fanoutCrcVal + " length=" + fanoutLength);
-        }
+        //log.info("set terminal chunk fanout: {} length={}" ,fanoutCrcVal, fanoutLength);
+
         hashStore.setChunkFanout(fanoutCrcVal, blobHashes, fanoutLength);
         fanoutHashes.add(fanoutCrcVal);
 

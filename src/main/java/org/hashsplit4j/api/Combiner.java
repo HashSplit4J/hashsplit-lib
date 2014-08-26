@@ -48,6 +48,7 @@ public class Combiner {
                 }
             } else {
                 log.warn("Did not find fanout: " + fanoutHash);
+                //throw new RuntimeException("Did not find chunk fanout: " + fanoutHash);
             }
         }
 
