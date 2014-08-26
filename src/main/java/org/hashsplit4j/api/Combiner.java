@@ -3,6 +3,8 @@ package org.hashsplit4j.api;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Puts files back together
@@ -10,6 +12,8 @@ import java.util.List;
  * @author brad
  */
 public class Combiner {
+
+    private static final Logger log = LoggerFactory.getLogger(Combiner.class);
 
     private long currentByte = 0;
     private int currentFanout = 0;
@@ -24,17 +28,26 @@ public class Combiner {
         }
         for (String fanoutHash : fanoutHashes) {
             Fanout fanout = hashStore.getChunkFanout(fanoutHash);
-            for (String hash : fanout.getHashes()) {
-                if (canceled) {
-                    throw new IOException("Operation cancelled");
-                }
+            if (fanout != null) {
+                List<String> hashes = fanout.getHashes();
+                if (hashes != null) {
+                    for (String hash : fanout.getHashes()) {
+                        if (canceled) {
+                            throw new IOException("Operation cancelled");
+                        }
 
-                byte[] arr = blobStore.getBlob(hash);
-                if (arr == null) {
-                    throw new RuntimeException("Failed to lookup blob: " + hash);
+                        byte[] arr = blobStore.getBlob(hash);
+                        if (arr == null) {
+                            throw new RuntimeException("Failed to lookup blob: " + hash);
+                        }
+                        out.write(arr);
+                        bytesWritten += arr.length;
+                    }
+                } else {
+                    log.warn("Got null hashes for fanout: " + fanoutHash);
                 }
-                out.write(arr);
-                bytesWritten += arr.length;
+            } else {
+                log.warn("Did not find fanout: " + fanoutHash);
             }
         }
 
