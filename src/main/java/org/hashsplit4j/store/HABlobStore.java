@@ -1,8 +1,11 @@
 package org.hashsplit4j.store;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.hashsplit4j.api.BlobStore;
+import org.hashsplit4j.triplets.HashCalc;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -19,6 +22,7 @@ public class HABlobStore implements BlobStore {
     private final ExecutorService exService;
 
     private boolean trySecondaryWhenNotFound = true;
+    private boolean validate = false;
 
     private BlobStore curPrimary;
     private BlobStore curSecondary;
@@ -63,28 +67,41 @@ public class HABlobStore implements BlobStore {
 
     @Override
     public byte[] getBlob(String hash) {
+        BlobStore from;
+        byte[] arr;
         try {
-            byte[] arr = curPrimary.getBlob(hash);
+            from = curPrimary;
+            arr = curPrimary.getBlob(hash);
             if (arr == null) {
                 if (trySecondaryWhenNotFound && curSecondary != null) {
                     log.info("Not found in primary, and trySecondaryWhenNotFound is true, so try secondary");
+                    from = curSecondary;
                     arr = curSecondary.getBlob(hash);
                 }
             }
-            return arr;
         } catch (Exception ex) {
             log.warn("getBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage());
             log.warn("try on seconday: " + curSecondary + " ...");
-            byte[] arr;
             try {
+                from = curSecondary;
                 arr = curSecondary.getBlob(hash);
                 log.warn("getBlob succeeded on secondary");
             } catch (Exception e) {
                 throw new RuntimeException("Failed to lookup from secondary: " + secondary, e);
             }
             switchStores();
-            return arr;
         }
+        
+        if( validate && (arr != null) ) {
+            try {
+                log.trace("Validate blob with hash={} with size={}", hash, arr.length);
+                HashCalc.getInstance().verifyHash(new ByteArrayInputStream(arr), hash);
+            } catch (IOException ex) {
+                throw new RuntimeException("Hash check failed: " + hash + " num bytes: " + arr.length + " from " + from.toString());
+            }
+        }
+        
+        return arr;
     }
 
     public boolean isTrySecondaryWhenNotFound() {
@@ -110,6 +127,16 @@ public class HABlobStore implements BlobStore {
         log.warn("Done switching stores. New primary=" + curPrimary + " New seconday=" + curSecondary);
     }
 
+    public boolean isValidate() {
+        return validate;
+    }
+
+    public void setValidate(boolean validate) {
+        this.validate = validate;
+    }
+
+    
+    
     public class InsertBlobRunnable implements Runnable {
 
         private final String hash;

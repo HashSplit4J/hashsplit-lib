@@ -118,7 +118,7 @@ public class HashCalc {
     }
 
     public Map<String, ITriplet> toMap(List<ITriplet> triplets) {
-        Map<String, ITriplet> map = new HashMap<String, ITriplet>();
+        Map<String, ITriplet> map = new HashMap<>();
         for (ITriplet t : triplets) {
             map.put(t.getName(), t);
         }
