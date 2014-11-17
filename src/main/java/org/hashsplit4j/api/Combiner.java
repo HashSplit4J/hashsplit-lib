@@ -105,14 +105,32 @@ public class Combiner {
                 if (arr == null) {
                     throw new RuntimeException("Couldnt locate blob: " + hash);
                 }
+                
                 int numBytes;
-                if (finish == null || currentByte + arr.length < finish) {
-                    // write all remaining bytes
-                    numBytes = arr.length - currentBlobByte;
+                long bytesLeftToWrite = finish - currentByte + 1;
+                long blobBytesLeft = arr.length - currentBlobByte;
+                if( blobBytesLeft <= bytesLeftToWrite ) {
+                    // write all remaining bytes from this blob
+                    numBytes = arr.length - currentBlobByte;                    
                 } else {
-                    numBytes = (int) (finish - currentByte + 1);
+                    // less bytes to write then available, so write up to bytesLeftToWrite
+                    numBytes = (int)bytesLeftToWrite;
                 }
-                out.write(arr, currentBlobByte, numBytes);
+                
+//                if (finish == null || currentByte + arr.length < finish) {                
+//                    // write all remaining bytes from this blob
+//                    System.out.println("write all remaining");
+//                    numBytes = arr.length - currentBlobByte;
+//                } else {
+//                    System.out.println("write up to finish");
+//                    numBytes = (int) (finish - currentByte + 1);
+//                }
+                try {
+                    out.write(arr, currentBlobByte, numBytes);
+                } catch (Throwable e) {
+                    log.error("Exception writing bytes: finish={} currentByte={} ", finish, currentByte );
+                    throw new RuntimeException("Failed to write bytes: currentBlobByte=" + currentBlobByte + " numBytes=" + numBytes + " array size=" + arr.length, e);
+                }
                 bytesWritten += numBytes;
                 currentBlobByte = 0;
                 currentByte += numBytes;
