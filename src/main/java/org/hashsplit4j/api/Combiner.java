@@ -105,18 +105,22 @@ public class Combiner {
                 if (arr == null) {
                     throw new RuntimeException("Couldnt locate blob: " + hash);
                 }
-                
+
                 int numBytes;
-                long bytesLeftToWrite = finish - currentByte + 1;
-                long blobBytesLeft = arr.length - currentBlobByte;
-                if( blobBytesLeft <= bytesLeftToWrite ) {
-                    // write all remaining bytes from this blob
-                    numBytes = arr.length - currentBlobByte;                    
+                if (finish == null) {
+                    numBytes = arr.length - currentBlobByte;
                 } else {
-                    // less bytes to write then available, so write up to bytesLeftToWrite
-                    numBytes = (int)bytesLeftToWrite;
+                    long bytesLeftToWrite = finish - currentByte + 1;
+                    long blobBytesLeft = arr.length - currentBlobByte;
+                    if (blobBytesLeft <= bytesLeftToWrite) {
+                        // write all remaining bytes from this blob
+                        numBytes = arr.length - currentBlobByte;
+                    } else {
+                        // less bytes to write then available, so write up to bytesLeftToWrite
+                        numBytes = (int) bytesLeftToWrite;
+                    }
                 }
-                
+
 //                if (finish == null || currentByte + arr.length < finish) {                
 //                    // write all remaining bytes from this blob
 //                    System.out.println("write all remaining");
@@ -128,7 +132,7 @@ public class Combiner {
                 try {
                     out.write(arr, currentBlobByte, numBytes);
                 } catch (Throwable e) {
-                    log.error("Exception writing bytes: finish={} currentByte={} ", finish, currentByte );
+                    log.error("Exception writing bytes: finish={} currentByte={} ", finish, currentByte);
                     throw new RuntimeException("Failed to write bytes: currentBlobByte=" + currentBlobByte + " numBytes=" + numBytes + " array size=" + arr.length, e);
                 }
                 bytesWritten += numBytes;
