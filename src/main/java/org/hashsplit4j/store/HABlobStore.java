@@ -23,6 +23,7 @@ public class HABlobStore implements BlobStore {
 
     private boolean trySecondaryWhenNotFound = true;
     private boolean validate = false;
+    private int retries = 3;
 
     private BlobStore curPrimary;
     private BlobStore curSecondary;
@@ -39,6 +40,17 @@ public class HABlobStore implements BlobStore {
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
+        for (int i = 0; i < retries; i++) {
+            try {
+                _setBlob(hash, bytes);
+                return ;
+            } catch (Exception e) {
+                log.warn("Failed to setBlob on both stores. Retry=" + i + " of " + retries);
+            }
+        }
+    }
+
+    private void _setBlob(String hash, byte[] bytes) throws Exception {
         try {
             curPrimary.setBlob(hash, bytes);
             enqueue(hash, bytes, curSecondary);
@@ -50,7 +62,7 @@ public class HABlobStore implements BlobStore {
             log.warn("setBlob succeeded on secondary");
             switchStores();
         }
-//        log.info("Finished setBlob: " + hash);
+
     }
 
     private void enqueue(String hash, byte[] bytes, BlobStore target) {
@@ -91,8 +103,8 @@ public class HABlobStore implements BlobStore {
             }
             switchStores();
         }
-        
-        if( validate && (arr != null) ) {
+
+        if (validate && (arr != null)) {
             try {
                 log.trace("Validate blob with hash={} with size={}", hash, arr.length);
                 HashCalc.getInstance().verifyHash(new ByteArrayInputStream(arr), hash);
@@ -100,7 +112,7 @@ public class HABlobStore implements BlobStore {
                 throw new RuntimeException("Hash check failed: " + hash + " num bytes: " + arr.length + " from " + from.toString());
             }
         }
-        
+
         return arr;
     }
 
@@ -135,8 +147,14 @@ public class HABlobStore implements BlobStore {
         this.validate = validate;
     }
 
-    
-    
+    public int getRetries() {
+        return retries;
+    }
+
+    public void setRetries(int retries) {
+        this.retries = retries;
+    }
+
     public class InsertBlobRunnable implements Runnable {
 
         private final String hash;
