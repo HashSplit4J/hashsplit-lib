@@ -40,14 +40,17 @@ public class HABlobStore implements BlobStore {
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
+        Exception last = null;
         for (int i = 0; i < retries; i++) {
             try {
                 _setBlob(hash, bytes);
                 return ;
             } catch (Exception e) {
-                log.warn("Failed to setBlob on both stores. Retry=" + i + " of " + retries);
+                log.warn("Failed to setBlob on both stores. Retry=" + i + " of " + retries, e);
+                last = e;
             }
         }
+        throw new RuntimeException("Failed to set to any blobstore after " + retries + " attempts", last);
     }
 
     private void _setBlob(String hash, byte[] bytes) throws Exception {
