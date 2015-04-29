@@ -45,7 +45,9 @@ public class FileUtil {
     }
 
     public static void writeFile(File file, byte[] data, boolean append, Boolean autoCreate) throws IOException {
-        if (!file.exists()) {
+        if (!file.exists() && autoCreate) {
+            File parentFile = file.getAbsoluteFile().getParentFile();
+            org.apache.commons.io.FileUtils.forceMkdir(parentFile);
             file.createNewFile();
         }
         writeFile(file, data, append);

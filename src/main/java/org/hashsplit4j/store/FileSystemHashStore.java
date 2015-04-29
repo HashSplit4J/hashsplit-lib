@@ -23,9 +23,11 @@ import org.slf4j.LoggerFactory;
 public class FileSystemHashStore implements HashStore {
 
     private static final Logger log = LoggerFactory.getLogger(FileSystemHashStore.class);
-
+    private static final String CHUNK_TYPE = "chunks";
+    private static final String FILE_TYPE = "files";
+    private static final String FILE_EXT = ".hash";
+    
     private final File envHome;
-    private final String FILE_EXT = ".hash";
 
     public FileSystemHashStore(File envHome) {
         this.envHome = envHome;
@@ -33,8 +35,8 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public void setChunkFanout(String hash, List<String> blobHashes, long actualContentLength) {
-        File chunkFanout = new File(envHome, "chunks/" + hash + FILE_EXT);
         String hashes = formatFanout(blobHashes, actualContentLength);
+        File chunkFanout = toPath(CHUNK_TYPE, hash);
         try {
             FileUtil.writeFile(chunkFanout, hashes.getBytes(), false, Boolean.TRUE);
         } catch (IOException ex) {
@@ -44,8 +46,8 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public void setFileFanout(String hash, List<String> fanoutHashes, long actualContentLength) {
-        File fileFanout = new File(envHome, "files/" + hash + FILE_EXT);
         String hashes = formatFanout(fanoutHashes, actualContentLength);
+        File fileFanout = toPath(FILE_TYPE, hash);
         try {
             FileUtil.writeFile(fileFanout, hashes.getBytes(), false, Boolean.TRUE);
         } catch (IOException ex) {
@@ -55,8 +57,8 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public Fanout getFileFanout(String fileHash) {
-        File fileFanout = new File(envHome, "files/" + fileHash + FILE_EXT);
-        if(fileFanout.exists()){
+        File fileFanout = toPath(FILE_TYPE, fileHash);
+        if (fileFanout.exists()) {
             try {
                 String hashes = FileUtil.readFile(fileFanout);
                 return parseFanout(hashes);
@@ -69,8 +71,8 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public Fanout getChunkFanout(String fanoutHash) {
-        File chunkFanout = new File(envHome, "chunks/" + fanoutHash + FILE_EXT);
-        if(chunkFanout.exists()){
+        File chunkFanout = toPath(CHUNK_TYPE, fanoutHash);
+        if (chunkFanout.exists()) {
             try {
                 String hashes = FileUtil.readFile(chunkFanout);
                 return parseFanout(hashes);
@@ -83,13 +85,13 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public boolean hasChunk(String fanoutHash) {
-        File chunkFanout = new File(envHome, "chunks/" + fanoutHash + FILE_EXT);
+        File chunkFanout = toPath(CHUNK_TYPE, fanoutHash);
         return chunkFanout.exists();
     }
 
     @Override
     public boolean hasFile(String fileHash) {
-        File fileFanout = new File(envHome, "files/" + fileHash + FILE_EXT);
+        File fileFanout = toPath(FILE_TYPE, fileHash);
         return fileFanout.exists();
     }
 
@@ -119,5 +121,13 @@ public class FileSystemHashStore implements HashStore {
             }
         }
         return new FanoutImpl(blobHashes, actualContentLength);
+    }
+
+    private File toPath(String type, String hash) {
+        String group = hash.substring(0, 3);
+        String subGroup = hash.substring(0, 2);
+        String pathName = type + "/" + group + "/" + subGroup + "/" + hash + FILE_EXT;
+        File file = new File(envHome, pathName);
+        return file;
     }
 }
