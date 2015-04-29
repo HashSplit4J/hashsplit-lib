@@ -17,6 +17,7 @@ package org.hashsplit4j.store;
 import org.apache.jcs.JCS;
 import org.apache.jcs.access.CacheAccess;
 import org.apache.jcs.access.exception.CacheException;
+import org.apache.jcs.engine.behavior.ICompositeCacheAttributes;
 import org.hashsplit4j.api.BlobStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,18 +38,24 @@ public class JCSCachingBlobStore implements BlobStore {
     private long hits;
     private long misses;
 
-    public JCSCachingBlobStore(BlobStore blobStore, int capacity) throws CacheException {
+    public JCSCachingBlobStore(BlobStore blobStore, Integer capacity) throws CacheException {
         this.blobStore = blobStore;
         cache = JCS.getInstance("blobs");
+        ICompositeCacheAttributes cacheCca = cache.getCacheAttributes();
+        if (capacity != null) {
+            cacheCca.setMaxObjects(capacity);
+        }
+        cacheCca.setUseMemoryShrinker(true);
+        this.cache.setCacheAttributes(cacheCca);
     }
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
         blobStore.setBlob(hash, bytes);
         try {
-            cache.put(hash, bytes);
+            cache.putSafe(hash, bytes);
         } catch (CacheException ex) {
-            log.warn("Failed to add to cache: " + hash, ex);
+            log.warn("Failed to add blob to cache: " + hash, ex);
         }
     }
 
@@ -61,9 +68,9 @@ public class JCSCachingBlobStore implements BlobStore {
                 log.info("JCSCachingBlobStore cache miss: hits={} misses={}", hits, misses);
                 misses++;
                 try {
-                    cache.put(hash, arr);
+                    cache.putSafe(hash, arr);
                 } catch (CacheException ex) {
-                    log.warn("Failed to add to cache: " + hash, ex);
+                    log.warn("Failed to add blob to cache: " + hash, ex);
                 }
             }
         } else {
