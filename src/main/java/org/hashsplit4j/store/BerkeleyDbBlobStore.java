@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,20 +28,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sleepycat.persist.EntityCursor;
+import org.hashsplit4j.api.*;
 
 public class BerkeleyDbBlobStore implements BlobStore {
 	
-	private Logger logger = LoggerFactory.getLogger(BerkeleyDbBlobStore.class);
+    private final Logger logger = LoggerFactory.getLogger(BerkeleyDbBlobStore.class);
 	
     private final int nPrefGroup;
     private final int nPrefSubGroup;
 
-    private BerkeleyDbAccessor dbAccessor;
+    private final BerkeleyDbAccessor dbAccessor;
 
     /**
      * Encapsulates the environment and data store
      */
-    private BerkeleyDbEnv dbEnv = new BerkeleyDbEnv();
+    private final BerkeleyDbEnv dbEnv = new BerkeleyDbEnv();
 
     public BerkeleyDbBlobStore(File envHome, int nPrefGroup, int nPrefSubGroup) {
         this.nPrefGroup = nPrefGroup;
@@ -121,22 +122,18 @@ public class BerkeleyDbBlobStore implements BlobStore {
      *       |   abc     |   xxxxxx      |   INVALID     |
      *       +-----------+---------------+---------------+
      *      
-     * @return
      */
     public void generateHashes() {
-    	EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.INVALID).entities();
-    	try {
-			for (HashGroup hashGroup : entities) {
-				List<HashGroup> subGroups = getSubGroups(hashGroup.getName());
-				
-				String recalHash = Crypt.toHexFromBlob(subGroups);
-				hashGroup.setContentHash(recalHash);
-				hashGroup.setStatus(Status.VALID);
-				dbAccessor.getGroupByIndex().put(hashGroup);
-			}
-		} finally {
-			entities.close();
-		}
+    	try (EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.INVALID).entities()) {
+            for (HashGroup hashGroup : entities) {
+                List<HashGroup> subGroups = getSubGroups(hashGroup.getName());
+
+                String recalHash = Crypt.toHexFromBlob(subGroups);
+                hashGroup.setContentHash(recalHash);
+                hashGroup.setStatus(Status.VALID);
+                dbAccessor.getGroupByIndex().put(hashGroup);
+            }
+        }
     }
 
     /**
@@ -156,9 +153,8 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return
      */
     public List<HashGroup> getRootGroups() {
-        List<HashGroup> groups = new ArrayList<HashGroup>();
-        EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.VALID).entities();
-        try {
+        List<HashGroup> groups = new ArrayList<>();
+        try (EntityCursor<HashGroup> entities = dbAccessor.getGroupByStatus().subIndex(Status.VALID).entities()) {
             Iterator<HashGroup> iterator = entities.iterator();
             if (iterator instanceof List)
             	return (List<HashGroup>) iterator;
@@ -168,8 +164,6 @@ public class BerkeleyDbBlobStore implements BlobStore {
                     groups.add(iterator.next());
                 }
             }
-        } finally {
-            entities.close();
         }
         return groups;
     }
@@ -181,9 +175,8 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return
      */
     public List<HashGroup> getSubGroups(String parent) {
-        List<HashGroup> groups = new ArrayList<HashGroup>();
-        EntityCursor<SubGroup> entities = dbAccessor.getSubGroupByParent().subIndex(parent).entities();
-        try {
+        List<HashGroup> groups = new ArrayList<>();
+        try (EntityCursor<SubGroup> entities = dbAccessor.getSubGroupByParent().subIndex(parent).entities()) {
             for (SubGroup subGroup : entities) {
                 if (subGroup.getStatus().equals(Status.INVALID)) {
                     getBlobHashes(subGroup.getName());
@@ -194,8 +187,6 @@ public class BerkeleyDbBlobStore implements BlobStore {
                         subGroup.getContentHash(), subGroup.getStatus());
                 groups.add(hashGroup);
             }
-        } finally {
-            entities.close();
         }
         return groups;
     }
@@ -207,9 +198,8 @@ public class BerkeleyDbBlobStore implements BlobStore {
      * @return
      */
     public List<String> getBlobHashes(String subGroupName) {
-        List<String> hashes = new ArrayList<String>();
-        EntityCursor<Blob> entities = dbAccessor.getBlobBySubGroup().subIndex(subGroupName).entities();
-        try {
+        List<String> hashes = new ArrayList<>();
+        try (EntityCursor<Blob> entities = dbAccessor.getBlobBySubGroup().subIndex(subGroupName).entities()) {
             for (Blob blob : entities) {
                 hashes.add(blob.getHash());
             }
@@ -218,8 +208,6 @@ public class BerkeleyDbBlobStore implements BlobStore {
             String rootGroup = subGroupName.substring(0, nPrefGroup);
             SubGroup subGroup = new SubGroup(subGroupName, rootGroup, recalHash, Status.VALID);
             dbAccessor.getSubGroupByIndex().put(subGroup);
-        } finally {
-            entities.close();
         }
         return hashes;
     }
@@ -264,28 +252,27 @@ public class BerkeleyDbBlobStore implements BlobStore {
      */
     private int importFile(File file) {
     	if (!file.exists()) {
-    		logger.warn("No such directory " + file.getAbsolutePath());
+            logger.warn("No such directory " + file.getAbsolutePath());
     	}
     	
     	int total = 0;
     	if (!file.isHidden()) {
-    		String hash = file.getName();
-    		if (hash.matches("[a-fA-F0-9]{40}")) {
-    			try {
-					logger.info("Importing contents of file " + file.getName() + " into BerkeleyDB");
-					byte[] contents = FileUtils.readFileToByteArray(file);
-					// Put its contents into BerkeleyDB
-        			setBlob(hash, contents);
-        			// Only one Blob has been imported to BerkeleyDB
-        			total += 1;
-        			return total;
-				} catch (IOException ex) {
-					logger.error("Could not read contents for the give file " + file.getAbsolutePath());
-				}
-    		} else {
-				logger.warn("The text " + hash + " is not SHA1 or MD5 string, "
-						+ "It should get SHA1 of its contents.");
-			}
+            String hash = file.getName();
+            if (hash.matches("[a-fA-F0-9]{40}")) {
+                try {
+                    logger.info("Importing contents of file " + file.getName() + " into BerkeleyDB");
+                    byte[] contents = FileUtils.readFileToByteArray(file);
+                    // Put its contents into BerkeleyDB
+                    setBlob(hash, contents);
+                    // Only one Blob has been imported to BerkeleyDB
+                    total += 1;
+                    return total;
+                } catch (IOException ex) {
+                    logger.error("Could not read contents for the give file " + file.getAbsolutePath());
+                }
+            } else {
+                logger.warn("The text " + hash + " is not SHA1 or MD5 string, " + "It should get SHA1 of its contents.");
+            }
     	}
     	
     	return total;

@@ -1,4 +1,4 @@
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.List;
+import org.hashsplit4j.api.HashGroup;
 
 import org.junit.After;
 import org.junit.Before;

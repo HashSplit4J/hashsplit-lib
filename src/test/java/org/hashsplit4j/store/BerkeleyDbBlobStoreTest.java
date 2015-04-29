@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.List;
+import org.hashsplit4j.api.Crypt;
+import org.hashsplit4j.api.HashGroup;
 
 import org.junit.After;
 import org.junit.Before;

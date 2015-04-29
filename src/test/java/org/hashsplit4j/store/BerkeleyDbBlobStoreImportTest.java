@@ -1,4 +1,4 @@
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
