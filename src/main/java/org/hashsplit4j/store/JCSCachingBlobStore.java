@@ -53,7 +53,9 @@ public class JCSCachingBlobStore implements BlobStore {
     public void setBlob(String hash, byte[] bytes) {
         blobStore.setBlob(hash, bytes);
         try {
-            cache.putSafe(hash, bytes);
+            if (cache.get(hash) == null) {
+                cache.putSafe(hash, bytes);
+            }
         } catch (CacheException ex) {
             log.warn("Failed to add blob to cache: " + hash, ex);
         }
@@ -68,7 +70,9 @@ public class JCSCachingBlobStore implements BlobStore {
                 log.info("JCSCachingBlobStore cache miss: hits={} misses={}", hits, misses);
                 misses++;
                 try {
-                    cache.putSafe(hash, arr);
+                    if (cache.get(hash) == null) {
+                        cache.putSafe(hash, arr);
+                    }
                 } catch (CacheException ex) {
                     log.warn("Failed to add blob to cache: " + hash, ex);
                 }
