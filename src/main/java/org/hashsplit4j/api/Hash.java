@@ -9,6 +9,7 @@ import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
 import com.sleepycat.persist.model.SecondaryKey;
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ import java.util.List;
  * @author dylan
  */
 @Entity
-public class Hash {
+public class Hash implements Serializable{
 
     @PrimaryKey
     private String hash;

@@ -42,7 +42,7 @@ public class BerkeleyHashDbAccessor {
     }
 
     public void addToHashByIndex(Hash hashEntity) {
-        hashByIndex.put(hashEntity);
+        hashByIndex.putNoOverwrite(hashEntity);
     }
 
     public Hash getFromHashByIndex(String hash) {

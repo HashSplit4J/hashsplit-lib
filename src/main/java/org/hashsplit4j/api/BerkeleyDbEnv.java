@@ -37,7 +37,7 @@ public class BerkeleyDbEnv {
     /**
      * Setup a Berkeley DB engine environment, and reload some blob records
      * 
-     * @param Environment home directory
+     * @param envHome home directory
      * @param readOnly
      * @throws DatabaseException
      */
