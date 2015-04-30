@@ -68,7 +68,9 @@ public class Parser {
      * @throws IOException
      */
     public String parse(InputStream in, HashStore hashStore, BlobStore blobStore) throws IOException {
-        log.info("parse. inputstream: " + in);
+        if (log.isInfoEnabled()) {
+            log.info("parse. inputstream: " + in);
+        }
         Rsum rsum = new Rsum(128);
         int numBlobs = 0;
         byte[] arr = new byte[1024];
@@ -83,7 +85,9 @@ public class Parser {
         long fileLength = 0;
 
         int s = in.read(arr, 0, 1024);
-        log.trace("initial block size: " + s);
+        if (log.isTraceEnabled()) {
+            log.trace("initial block size: " + s);
+        }
 
         List<String> fanoutHashes = new ArrayList<>();
         while (s >= 0) {
@@ -117,7 +121,9 @@ public class Parser {
                 if (((x & MASK) == MASK) || limited) {
                     String blobCrcHex = toHex(blobCrc);
                     byte[] blobBytes = bout.toByteArray();
-                    log.info("Store blob: " + blobCrcHex + " length=" + blobBytes.length + " hash: " + x + " mask: " + MASK);
+                    if (log.isInfoEnabled()) {
+                        log.info("Store blob: " + blobCrcHex + " length=" + blobBytes.length + " hash: " + x + " mask: " + MASK);
+                    }
                     blobStore.setBlob(blobCrcHex, blobBytes);
                     bout.reset();
                     blobHashes.add(blobCrcHex);
@@ -152,7 +158,9 @@ public class Parser {
 
         // Now store a fanout for the whole file. The contained hashes locate other fanouts
         String fileCrcVal = toHex(fileCrc);
-        log.info("set file fanout: " + fanoutCrcVal + "  length=" + fileLength + " avg blob size=" + fileLength / numBlobs);
+        if (log.isInfoEnabled()) {
+            log.info("set file fanout: " + fanoutCrcVal + "  length=" + fileLength + " avg blob size=" + fileLength / numBlobs);
+        }
         hashStore.setFileFanout(fileCrcVal, fanoutHashes, fileLength);
         return fileCrcVal;
     }
