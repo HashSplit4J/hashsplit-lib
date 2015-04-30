@@ -14,7 +14,7 @@ import org.junit.Test;
 
 public class BerkeleyDbBlobStoreSyncTest {
 
-    BerkeleyDbBlobStore blobStore;
+    /*BerkeleyDbBlobStore blobStore;
 
     File envHome;
     
@@ -103,5 +103,5 @@ public class BerkeleyDbBlobStoreSyncTest {
         
         rootGroups = blobStore.getRootGroups();
         assertEquals(1, rootGroups.size());
-    }   
+    }   */
 }

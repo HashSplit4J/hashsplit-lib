@@ -5,6 +5,8 @@
  */
 package org.hashsplit4j.store;
 
+import com.sleepycat.je.Transaction;
+import com.sleepycat.je.TransactionConfig;
 import java.io.File;
 import java.util.List;
 import org.hashsplit4j.api.BerkeleyDbEnv;

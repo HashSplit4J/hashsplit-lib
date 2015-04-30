@@ -37,7 +37,7 @@ import org.junit.Test;
  */
 public class BerkeleyDbBlobStoreTest {
     
-    BerkeleyDbBlobStore blobStore;
+    /*BerkeleyDbBlobStore blobStore;
 
     File envHome;
     
@@ -92,46 +92,46 @@ public class BerkeleyDbBlobStoreTest {
         String expData = new String(data);
 
         assertEquals(actualData, expData);
-    }
+    }*/
 
     /**
      * Test hasBlob when there is a blob
      */
-    @Test
+    /*@Test
     public void testHasBlobWithExist() {
         String hash = Crypt.toHexFromText("10");
         blobStore.setBlob(hash, "XXX".getBytes());
         
         // Found a Blob
         assertTrue(blobStore.hasBlob(hash));
-    }
+    }*/
 
     /**
      * Test hasBlob when there is not a blob
      */
-    @Test
+    /*@Test
     public void testHasBlobWithoutExist() {
         String hash = Crypt.toHexFromText("1001");
 
         // Not found a Blob
         assertFalse(blobStore.hasBlob(hash));
-    }
+    }*/
     
     /**
      * There is not a hash group if didn't call generated hashes function
      */
-    @Test
+    /*@Test
     public void testHashGroupsWithoutGenerateHashes() {
         // Should not have generated any hash groups yet
         List<HashGroup> rootGroups = blobStore.getRootGroups();
         assertEquals(0, rootGroups.size()); // should be NO root groups yet
-    }
+    }*/
     
     /**
      * There are 892 hash group when call generated hashes function
      * 
      */
-    @Test
+    /*@Test
     public void testHashGroupsWithGenerateHashes() {
         String hash = Crypt.toHexFromText("1");
         blobStore.setBlob(hash, "1".getBytes());
@@ -185,5 +185,5 @@ public class BerkeleyDbBlobStoreTest {
         
         // Should have ONE hash f739349daff6e29994b561a6d402f4ebea8f7edb
         assertEquals(1, hashes.size());
-    }
+    }*/
 }

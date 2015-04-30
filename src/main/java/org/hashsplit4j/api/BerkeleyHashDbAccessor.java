@@ -6,6 +6,7 @@
 package org.hashsplit4j.api;
 
 import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.TransactionConfig;
 import com.sleepycat.persist.EntityStore;
 import com.sleepycat.persist.PrimaryIndex;
 import com.sleepycat.persist.SecondaryIndex;

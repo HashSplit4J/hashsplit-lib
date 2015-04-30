@@ -6,10 +6,8 @@
 package org.hashsplit4j.api;
 
 import com.sleepycat.persist.model.Entity;
-import com.sleepycat.persist.model.PrimaryKey;
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
 import com.sleepycat.persist.model.SecondaryKey;
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -17,20 +15,15 @@ import java.util.List;
  * @author dylan
  */
 @Entity
-public class Hash implements Serializable{
-
-    @PrimaryKey
-    private String hash;
-    private String group;
+public class Hash extends HashPersistant {
 
     @SecondaryKey(relate = MANY_TO_ONE)
     private String subGroup;
 
     private List<String> hashes;
     private long actualContentLength;
-
-    private Hash() {
-    }
+    
+    private Hash(){}
 
     public Hash(String hash, String group, String subGroup, List<String> hashes, long actualContentLength) {
         this.hash = hash;
