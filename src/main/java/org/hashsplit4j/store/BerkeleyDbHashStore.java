@@ -5,10 +5,13 @@
  */
 package org.hashsplit4j.store;
 
-import com.sleepycat.je.Transaction;
-import com.sleepycat.je.TransactionConfig;
 import java.io.File;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import org.hashsplit4j.api.BerkeleyDbEnv;
 import org.hashsplit4j.api.BerkeleyHashDbAccessor;
 import org.hashsplit4j.api.Fanout;
@@ -38,6 +41,15 @@ public class BerkeleyDbHashStore implements HashStore {
     private final BerkeleyHashDbAccessor fileAccessor;
     private final BerkeleyHashDbAccessor chunkAccessor;
 
+    private final ScheduledExecutorService scheduler = Executors
+            .newScheduledThreadPool(1);
+
+    private Date lastCommit = new Date();
+    private Boolean doCommit = false;
+    private int commitCount = 0;
+
+    private final ScheduledFuture<?> taskHandle;
+
     public BerkeleyDbHashStore(File fileEnvHome, File chunkEnvHome, int nPrefGroup, int nPrefSubGroup) {
         this.nPrefGroup = nPrefGroup;
         this.nPrefSubGroup = nPrefSubGroup;
@@ -50,6 +62,18 @@ public class BerkeleyDbHashStore implements HashStore {
 
         fileAccessor = new BerkeleyHashDbAccessor(dbFileEnv.getEntityStore());
         chunkAccessor = new BerkeleyHashDbAccessor(dbChunkEnv.getEntityStore());
+
+        this.taskHandle = scheduler.scheduleAtFixedRate(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            writeToDisk();
+                        } catch (Exception ex) {
+                            log.warn("Error writing db changes to disk", ex);
+                        }
+                    }
+                }, 0, 15, TimeUnit.SECONDS);
     }
 
     @Override
@@ -62,6 +86,10 @@ public class BerkeleyDbHashStore implements HashStore {
         String subGroup = hash.substring(0, nPrefSubGroup);
 
         chunkAccessor.addToHashByIndex(new Hash(hash, group, subGroup, blobHashes, actualContentLength));
+        
+        lastCommit = new Date();
+        doCommit = true;
+        commitCount++;
     }
 
     @Override
@@ -74,6 +102,10 @@ public class BerkeleyDbHashStore implements HashStore {
         String subGroup = hash.substring(0, nPrefSubGroup);
 
         fileAccessor.addToHashByIndex(new Hash(hash, group, subGroup, fanoutHashes, actualContentLength));
+        
+        lastCommit = new Date();
+        doCommit = true;
+        commitCount++;
     }
 
     @Override
@@ -84,8 +116,8 @@ public class BerkeleyDbHashStore implements HashStore {
 
     @Override
     public Fanout getChunkFanout(String fanoutHash) {
-         Hash dbHash = chunkAccessor.getFromHashByIndex(fanoutHash);
-         return parseHash(dbHash);
+        Hash dbHash = chunkAccessor.getFromHashByIndex(fanoutHash);
+        return parseHash(dbHash);
     }
 
     @Override
@@ -104,6 +136,16 @@ public class BerkeleyDbHashStore implements HashStore {
             fanout = new FanoutImpl(dbHash.getHashes(), dbHash.getActualContentLength());
         }
         return fanout;
+    }
+
+    private void writeToDisk() {
+        Date now = new Date();
+        if ((lastCommit == null || (now.getTime() - lastCommit.getTime()) > 5000 || commitCount > 10000) && doCommit) {
+            this.dbChunkEnv.getEnv().sync();
+            this.dbFileEnv.getEnv().sync();
+            doCommit = false;
+            commitCount = 0;
+        }
     }
 
 }

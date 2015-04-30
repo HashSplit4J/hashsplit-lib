@@ -37,7 +37,7 @@ import org.hashsplit4j.api.*;
 
 public class BerkeleyDbBlobStore implements BlobStore {
 
-    private final Logger logger = LoggerFactory.getLogger(BerkeleyDbBlobStore.class);
+    private final Logger log = LoggerFactory.getLogger(BerkeleyDbBlobStore.class);
 
     private final int nPrefGroup;
     private final int nPrefSubGroup;
@@ -51,7 +51,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
     private Boolean doCommit = false;
     private int commitCount = 0;
 
-    final ScheduledFuture<?> taskHandle;
+    private final ScheduledFuture<?> taskHandle;
 
     /**
      * Encapsulates the environment and data store
@@ -66,7 +66,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
                         try {
                             writeToDisk();
                         } catch (Exception ex) {
-                            ex.printStackTrace(); //or loggger would be better
+                            log.warn("Error writing db changes to disk", ex);
                         }
                     }
                 }, 0, 15, TimeUnit.SECONDS);
@@ -274,7 +274,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
      */
     private int importFile(File file) {
         if (!file.exists()) {
-            logger.warn("No such directory " + file.getAbsolutePath());
+            log.warn("No such directory " + file.getAbsolutePath());
         }
 
         int total = 0;
@@ -282,7 +282,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
             String hash = file.getName();
             if (hash.matches("[a-fA-F0-9]{40}")) {
                 try {
-                    logger.info("Importing contents of file " + file.getName() + " into BerkeleyDB");
+                    log.info("Importing contents of file " + file.getName() + " into BerkeleyDB");
                     byte[] contents = FileUtils.readFileToByteArray(file);
                     // Put its contents into BerkeleyDB
                     setBlob(hash, contents);
@@ -290,10 +290,10 @@ public class BerkeleyDbBlobStore implements BlobStore {
                     total += 1;
                     return total;
                 } catch (IOException ex) {
-                    logger.error("Could not read contents for the give file " + file.getAbsolutePath());
+                    log.error("Could not read contents for the give file " + file.getAbsolutePath());
                 }
             } else {
-                logger.warn("The text " + hash + " is not SHA1 or MD5 string, " + "It should get SHA1 of its contents.");
+                log.warn("The text " + hash + " is not SHA1 or MD5 string, " + "It should get SHA1 of its contents.");
             }
         }
 
@@ -302,7 +302,7 @@ public class BerkeleyDbBlobStore implements BlobStore {
 
     private void writeToDisk() {
         Date now = new Date();
-        if ((lastCommit == null || (now.getTime() - lastCommit.getTime()) > 10000 || commitCount > 10000) && doCommit) {
+        if ((lastCommit == null || (now.getTime() - lastCommit.getTime()) > 5000 || commitCount > 10000) && doCommit) {
             this.dbEnv.getEnv().sync();
             doCommit = false;
             commitCount = 0;
