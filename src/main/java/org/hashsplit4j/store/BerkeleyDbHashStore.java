@@ -12,8 +12,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import org.hashsplit4j.api.BerkeleyDbEnv;
-import org.hashsplit4j.api.BerkeleyHashDbAccessor;
 import org.hashsplit4j.api.Fanout;
 import org.hashsplit4j.api.FanoutImpl;
 import org.hashsplit4j.api.Hash;

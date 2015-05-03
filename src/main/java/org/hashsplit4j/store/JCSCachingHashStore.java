@@ -13,7 +13,6 @@ import org.apache.jcs.engine.behavior.ICompositeCacheAttributes;
 import org.hashsplit4j.api.Fanout;
 import org.hashsplit4j.api.FanoutImpl;
 import org.hashsplit4j.api.HashStore;
-import org.hashsplit4j.api.NullHashStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.hashsplit4j.api.Fanout;
 import org.hashsplit4j.api.FanoutImpl;
-import org.hashsplit4j.api.FileUtil;
+import org.hashsplit4j.utils.FileUtil;
 import org.hashsplit4j.api.HashStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

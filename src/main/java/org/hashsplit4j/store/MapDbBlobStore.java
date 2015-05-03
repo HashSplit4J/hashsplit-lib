@@ -7,7 +7,6 @@ package org.hashsplit4j.store;
 
 import java.io.File;
 import org.hashsplit4j.api.BlobStore;
-import org.hashsplit4j.api.MapDbEnv;
 
 /**
  *

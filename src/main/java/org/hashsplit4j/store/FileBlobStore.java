@@ -1,10 +1,12 @@
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import java.io.*;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.CRC32;
+import org.hashsplit4j.api.BlobStore;
+import org.hashsplit4j.api.Parser;
 
 /**
  * Like a MemoryBlobStore, except instead of storing blobs in memory it just

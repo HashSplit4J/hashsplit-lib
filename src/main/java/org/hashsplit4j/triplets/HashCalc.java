@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
-import org.hashsplit4j.api.NullBlobStore;
-import org.hashsplit4j.api.NullHashStore;
+import org.hashsplit4j.store.NullBlobStore;
+import org.hashsplit4j.store.NullHashStore;
 import org.hashsplit4j.api.Parser;
 
 /**

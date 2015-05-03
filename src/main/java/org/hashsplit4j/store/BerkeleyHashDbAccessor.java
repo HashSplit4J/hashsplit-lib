@@ -3,12 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.persist.EntityStore;
 import com.sleepycat.persist.PrimaryIndex;
 import com.sleepycat.persist.SecondaryIndex;
+import org.hashsplit4j.api.Hash;
+import org.hashsplit4j.api.HashGroup;
+import org.hashsplit4j.api.SubGroup;
 
 /**
  *

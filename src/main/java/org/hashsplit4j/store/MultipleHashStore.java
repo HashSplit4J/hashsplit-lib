@@ -1,6 +1,8 @@
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import java.util.List;
+import org.hashsplit4j.api.Fanout;
+import org.hashsplit4j.api.HashStore;
 
 /**
  * Normally used for optimising network traffic. For example, if you have a
