@@ -1,7 +1,8 @@
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.hashsplit4j.api.BlobStore;
 
 /**
  *

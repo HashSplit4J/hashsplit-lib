@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.hashsplit4j.api;
+package org.hashsplit4j.store.berkeleyDbEnv;
 
 import java.io.File;
 
@@ -23,49 +23,58 @@ import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.persist.EntityStore;
 import com.sleepycat.persist.StoreConfig;
+import java.util.Date;
 
 public class BerkeleyDbEnv {
 
     private Environment env;
     private EntityStore store;
+    private Date lastCommit;
 
     /**
      * Our constructor does nothing
      */
-    public BerkeleyDbEnv() {}
+    public BerkeleyDbEnv() {
+    }
 
     /**
      * Setup a Berkeley DB engine environment, and reload some blob records
-     * 
-     * @param Environment home directory
+     *
+     * @param envHome home directory
      * @param readOnly
      * @throws DatabaseException
      */
     public void openEnv(File envHome, boolean readOnly) throws DatabaseException {
         if (!envHome.exists()) {
-            if (!envHome.mkdirs())
+            if (!envHome.mkdirs()) {
                 throw new RuntimeException("The directory " + envHome + " does not exist");
+            }
         }
 
-        EnvironmentConfig envConfig = new EnvironmentConfig();
-        StoreConfig storeConfig = new StoreConfig();
-        envConfig.setReadOnly(readOnly);
-        storeConfig.setReadOnly(readOnly);
+        EnvironmentConfig envConfig = new EnvironmentConfig()
+                .setReadOnly(readOnly)
+                .setTransactional(true)
+                .setSharedCache(true)
+                .setAllowCreate(!readOnly);
+        envConfig.setTxnNoSyncVoid(true);
+
+        StoreConfig storeConfig = new StoreConfig()
+                .setReadOnly(readOnly)
+                .setTransactional(true)
+                .setAllowCreate(!readOnly);
 
         // If the environment is opened for write, then we want to be
         // able to create the environment and entity store if
         // they do not exist.
-        envConfig.setAllowCreate(!readOnly);
-        storeConfig.setAllowCreate(!readOnly);
 
         // Open the environment and entity store
         env = new Environment(envHome, envConfig);
-        store = new EntityStore(env, "", storeConfig);
+        store = new EntityStore(env, envHome.getName(), storeConfig);
     }
-    
+
     /**
      * Get a handle to the entity store
-     * 
+     *
      * @return a entity store
      */
     public EntityStore getEntityStore() {
@@ -74,13 +83,13 @@ public class BerkeleyDbEnv {
 
     /**
      * Get a handle to the environment
-     * 
+     *
      * @return a environment
      */
     public Environment getEnv() {
         return env;
     }
-    
+
     /**
      * Close the store and environment
      */
@@ -102,19 +111,21 @@ public class BerkeleyDbEnv {
             }
         }
     }
-    
+
     /**
      * Remove Berkeley DB File
-     * 
+     *
      * @param envHome
      */
     public void removeDbFiles(File envHome) {
-        for(File file : envHome.listFiles()) {
-            if(!file.delete())
+        for (File file : envHome.listFiles()) {
+            if (!file.delete()) {
                 System.err.println("Could not delete " + file.getAbsolutePath());
+            }
         }
-        
-        if (!envHome.delete())
+
+        if (!envHome.delete()) {
             System.err.println("Failed to delete berkeley-db directory");
+        }
     }
 }

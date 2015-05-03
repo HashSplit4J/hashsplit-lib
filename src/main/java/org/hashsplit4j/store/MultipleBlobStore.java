@@ -1,6 +1,7 @@
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import java.util.List;
+import org.hashsplit4j.api.BlobStore;
 
 /**
  * Supports a common use case of having a more preferential BlobStore (eg local)
