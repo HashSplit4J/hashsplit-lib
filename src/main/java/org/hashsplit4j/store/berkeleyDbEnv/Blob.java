@@ -14,13 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.hashsplit4j.api;
+package org.hashsplit4j.store.berkeleyDbEnv;
 
 import com.sleepycat.persist.model.Entity;
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
 
-import com.sleepycat.persist.model.Persistent;
-import com.sleepycat.persist.model.PrimaryKey;
 import com.sleepycat.persist.model.SecondaryKey;
 
 /**

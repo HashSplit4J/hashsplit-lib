@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.hashsplit4j.api;
+package org.hashsplit4j.store.berkeleyDbEnv;
 
 import com.sleepycat.persist.model.Entity;
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;

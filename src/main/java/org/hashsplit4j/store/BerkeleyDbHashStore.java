@@ -5,6 +5,8 @@
  */
 package org.hashsplit4j.store;
 
+import org.hashsplit4j.store.berkeleyDbEnv.BerkeleyHashDbAccessor;
+import org.hashsplit4j.store.berkeleyDbEnv.BerkeleyDbEnv;
 import java.io.File;
 import java.util.Date;
 import java.util.List;
@@ -14,7 +16,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.hashsplit4j.api.Fanout;
 import org.hashsplit4j.api.FanoutImpl;
-import org.hashsplit4j.api.Hash;
+import org.hashsplit4j.store.berkeleyDbEnv.Hash;
 import org.hashsplit4j.api.HashStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

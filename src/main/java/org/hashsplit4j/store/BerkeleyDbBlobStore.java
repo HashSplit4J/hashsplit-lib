@@ -16,6 +16,9 @@
  */
 package org.hashsplit4j.store;
 
+import org.hashsplit4j.store.berkeleyDbEnv.BerkeleyDbEnv;
+import org.hashsplit4j.store.berkeleyDbEnv.BerkeleyDbAccessor;
+import org.hashsplit4j.store.berkeleyDbEnv.Blob;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;

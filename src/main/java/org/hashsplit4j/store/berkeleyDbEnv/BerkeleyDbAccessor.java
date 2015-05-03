@@ -14,13 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.hashsplit4j.store;
+package org.hashsplit4j.store.berkeleyDbEnv;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.persist.EntityStore;
 import com.sleepycat.persist.PrimaryIndex;
 import com.sleepycat.persist.SecondaryIndex;
-import org.hashsplit4j.api.Blob;
+import org.hashsplit4j.store.berkeleyDbEnv.Blob;
 import org.hashsplit4j.api.HashGroup;
 import org.hashsplit4j.api.SubGroup;
 
