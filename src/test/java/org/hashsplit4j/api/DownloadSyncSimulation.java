@@ -1,5 +1,10 @@
 package org.hashsplit4j.api;
 
+import org.hashsplit4j.store.FileBlobStore;
+import org.hashsplit4j.store.MultipleBlobStore;
+import org.hashsplit4j.store.MemoryHashStore;
+import org.hashsplit4j.store.MemoryBlobStore;
+import org.hashsplit4j.store.MultipleHashStore;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;

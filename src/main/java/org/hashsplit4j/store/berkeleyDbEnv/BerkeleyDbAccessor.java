@@ -14,43 +14,46 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.hashsplit4j.api;
+package org.hashsplit4j.store.berkeleyDbEnv;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.persist.EntityStore;
 import com.sleepycat.persist.PrimaryIndex;
 import com.sleepycat.persist.SecondaryIndex;
+import org.hashsplit4j.store.berkeleyDbEnv.Blob;
+import org.hashsplit4j.api.HashGroup;
+import org.hashsplit4j.api.SubGroup;
 
 /**
  * The data accessor class for the entity model
- * 
+ *
  * @author <a href="mailto:sondn@exoplatform.com">Ngoc Son Dang</a>
  * @version BerkeleyDbAccessor.java Dec 12, 2013
  */
 public class BerkeleyDbAccessor {
-    
-    private static final String SUBGROUP_SECONDARY_INDEX = "subGroup";    
-    private static final String STATUS_SECONDARY_INDEX = "status";    
+
+    private static final String SUBGROUP_SECONDARY_INDEX = "subGroup";
+    private static final String STATUS_SECONDARY_INDEX = "status";
     private static final String PARENT_SECONDARY_INDEX = "parent";
 
     private final PrimaryIndex<String, Blob> blobByIndex;
-    
+
     private final PrimaryIndex<String, HashGroup> groupByIndex;
-    
+
     private final PrimaryIndex<String, SubGroup> subGroupByIndex;
-    
+
     private final SecondaryIndex<String, String, Blob> blobBySubGroup;  // Secondary key for Blob classes
-                                                                        // Last field in the getSecondaryIndex() method must be
-                                                                        // the name of a class member; in this case, an Blob.class
-                                                                        // data member.
-    
+    // Last field in the getSecondaryIndex() method must be
+    // the name of a class member; in this case, an Blob.class
+    // data member.
+
     private final SecondaryIndex<String, String, HashGroup> groupByStatus;  // Secondary key for HashGroup classes
-    
+
     private final SecondaryIndex<String, String, SubGroup> subGroupByParent; // Secondary key for SubGroup classes
 
     /**
      * Open the indices
-     * 
+     *
      * @param store
      * @throws DatabaseException
      */
@@ -61,6 +64,15 @@ public class BerkeleyDbAccessor {
         this.groupByStatus = store.getSecondaryIndex(groupByIndex, String.class, STATUS_SECONDARY_INDEX);
         this.subGroupByIndex = store.getPrimaryIndex(String.class, SubGroup.class);
         this.subGroupByParent = store.getSecondaryIndex(subGroupByIndex, String.class, PARENT_SECONDARY_INDEX);
+    }
+
+    public void addToBlobByIndex(Blob blobEntity) {
+        PrimaryIndex<String, Blob> bI = getBlobByIndex();
+        bI.putNoOverwrite(blobEntity);
+    }
+
+    public Blob getFromBlobByIndex(String hash) {
+        return blobByIndex.get(hash);
     }
 
     public PrimaryIndex<String, Blob> getBlobByIndex() {
@@ -75,15 +87,15 @@ public class BerkeleyDbAccessor {
         return groupByIndex;
     }
 
-	public SecondaryIndex<String, String, HashGroup> getGroupByStatus() {
-		return groupByStatus;
-	}
+    public SecondaryIndex<String, String, HashGroup> getGroupByStatus() {
+        return groupByStatus;
+    }
 
-	public PrimaryIndex<String, SubGroup> getSubGroupByIndex() {
-		return subGroupByIndex;
-	}
+    public PrimaryIndex<String, SubGroup> getSubGroupByIndex() {
+        return subGroupByIndex;
+    }
 
-	public SecondaryIndex<String, String, SubGroup> getSubGroupByParent() {
-		return subGroupByParent;
-	}
+    public SecondaryIndex<String, String, SubGroup> getSubGroupByParent() {
+        return subGroupByParent;
+    }
 }

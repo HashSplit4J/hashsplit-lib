@@ -1,8 +1,11 @@
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.hashsplit4j.api.Fanout;
+import org.hashsplit4j.api.FanoutImpl;
+import org.hashsplit4j.api.HashStore;
 
 /**
  * This class is just for debugging and development. It holds all information
