@@ -1,4 +1,6 @@
-package org.hashsplit4j.api;
+package org.hashsplit4j.store;
+
+import org.hashsplit4j.api.BlobStore;
 
 /**
  * Does nothing. Really. Nothing.

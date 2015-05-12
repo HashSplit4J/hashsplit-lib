@@ -1,4 +1,4 @@
-package org.hashsplit4j.store;
+package org.hashsplit4j.utils;
 
 import java.io.File;
 
