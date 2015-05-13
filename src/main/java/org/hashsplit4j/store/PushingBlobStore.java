@@ -13,5 +13,9 @@ import org.hashsplit4j.api.BlobStore;
  */
 public interface PushingBlobStore extends BlobStore {
 
+    /**
+     * 
+     * @param blobStore 
+     */
     public void setReceivingBlobStore(ReceivingBlobStore blobStore);
 }

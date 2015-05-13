@@ -13,5 +13,10 @@ import org.hashsplit4j.api.BlobStore;
  */
 public interface ReceivingBlobStore extends BlobStore {
 
+    /**
+     * 
+     * @param hash
+     * @param bytes 
+     */
     public void pushBlob(String hash, byte[] bytes);
 }

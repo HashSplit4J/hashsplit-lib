@@ -250,8 +250,15 @@ public class BerkeleyDbBlobStore implements BlobStore, ReceivingBlobStore {
         }
     }
 
+    /**
+     * 
+     * @param hash
+     * @param bytes 
+     */
     @Override
     public void pushBlob(String hash, byte[] bytes) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if(!hasBlob(hash)){
+            setBlob(hash, bytes);
+        }
     }
 }
