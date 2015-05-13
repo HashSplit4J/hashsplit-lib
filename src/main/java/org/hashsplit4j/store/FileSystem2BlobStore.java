@@ -15,12 +15,13 @@ import org.hashsplit4j.event.NewFileBlobEvent;
  *
  * @author brad
  */
-public class FileSystem2BlobStore implements BlobStore {
+public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, ReceivingBlobStore {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FileSystemBlobStore.class);
 
     private final File root;
     private final EventManager eventManager;
+    private ReceivingBlobStore receivingBlobStore;
 
     public FileSystem2BlobStore(File root) {
         this.root = root;
@@ -82,9 +83,29 @@ public class FileSystem2BlobStore implements BlobStore {
 
     private File toPath(String hash) {
         String group = hash.substring(0, 3);
-        String subGroup = hash.substring(0, 2);
+        String subGroup = hash.substring(3, 7);
         String pathName = group + "/" + subGroup + "/" + hash;
         File file = new File(root, pathName);
         return file;
+    }
+
+    @Override
+    public void setReceivingBlobStore(ReceivingBlobStore blobStore) {
+        this.receivingBlobStore = blobStore;
+    }
+
+    @Override
+    public void pushBlob(String hash, byte[] bytes) {
+        if(!hasBlob(hash)){
+            setBlob(hash, bytes);
+        }
+    }
+    
+    private void pushBlobTo(File blob) throws IOException{
+        if(blob.isFile() && blob.exists()){
+            String fileName = blob.getName();
+            byte[] arr = FileUtils.readFileToByteArray(blob);
+            this.receivingBlobStore.pushBlob(fileName, arr);
+        }
     }
 }

@@ -38,7 +38,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.hashsplit4j.api.*;
 
-public class BerkeleyDbBlobStore implements BlobStore {
+public class BerkeleyDbBlobStore implements BlobStore, ReceivingBlobStore {
 
     private final Logger log = LoggerFactory.getLogger(BerkeleyDbBlobStore.class);
 
@@ -241,68 +241,6 @@ public class BerkeleyDbBlobStore implements BlobStore {
         return hashes;
     }
 
-    /**
-     * Scan the given directory for sub folders (recursively) and files, and
-     * import any files into this blob store
-     *
-     * DO NOT IMPORT: - hidden files - files that start with a dot
-     *
-     * @param dir
-     * @return
-     * @throws FileNotFoundException
-     */
-    public int importFiles(File dir) throws FileNotFoundException {
-        if (!dir.exists()) {
-            throw new FileNotFoundException("No such directory " + dir.getAbsolutePath());
-        }
-
-        if (!dir.isDirectory()) {
-            return importFile(dir);
-        }
-
-        int total = 0;
-        File[] files = dir.listFiles();
-        for (File file : files) {
-            total += importFiles(file);
-        }
-
-        return total;
-    }
-
-    /**
-     * Import any files into blob store
-     *
-     * @param file the give file
-     * @return number of file have been imported
-     */
-    private int importFile(File file) {
-        if (!file.exists()) {
-            log.warn("No such directory " + file.getAbsolutePath());
-        }
-
-        int total = 0;
-        if (!file.isHidden()) {
-            String hash = file.getName();
-            if (hash.matches("[a-fA-F0-9]{40}")) {
-                try {
-                    log.info("Importing contents of file " + file.getName() + " into BerkeleyDB");
-                    byte[] contents = FileUtils.readFileToByteArray(file);
-                    // Put its contents into BerkeleyDB
-                    setBlob(hash, contents);
-                    // Only one Blob has been imported to BerkeleyDB
-                    total += 1;
-                    return total;
-                } catch (IOException ex) {
-                    log.error("Could not read contents for the give file " + file.getAbsolutePath());
-                }
-            } else {
-                log.warn("The text " + hash + " is not SHA1 or MD5 string, " + "It should get SHA1 of its contents.");
-            }
-        }
-
-        return total;
-    }
-
     private void writeToDisk() {
         Date now = new Date();
         if ((lastCommit == null || (now.getTime() - lastCommit.getTime()) > 5000 || commitCount > 10000) && doCommit) {
@@ -310,5 +248,10 @@ public class BerkeleyDbBlobStore implements BlobStore {
             doCommit = false;
             commitCount = 0;
         }
+    }
+
+    @Override
+    public void pushBlob(String hash, byte[] bytes) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

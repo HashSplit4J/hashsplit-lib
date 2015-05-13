@@ -19,6 +19,13 @@ public class MigratingBlobStore implements BlobStore{
     public MigratingBlobStore(BlobStore newBlobStore, BlobStore oldBlobStore){
         this.newBlobStore = newBlobStore;
         this.oldBlobStore = oldBlobStore;
+        if(oldBlobStore instanceof PushingBlobStore){
+            PushingBlobStore pBlobStore = (PushingBlobStore) oldBlobStore;
+            if(newBlobStore instanceof ReceivingBlobStore){
+                ReceivingBlobStore rBlobStore = (ReceivingBlobStore) newBlobStore;
+                pBlobStore.setReceivingBlobStore(rBlobStore);
+            }
+        }
     }
 
     @Override

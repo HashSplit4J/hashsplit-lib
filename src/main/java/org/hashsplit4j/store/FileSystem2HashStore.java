@@ -20,16 +20,16 @@ import org.slf4j.LoggerFactory;
  *
  * @author dylan
  */
-public class FileSystemHashStore implements HashStore {
+public class FileSystem2HashStore implements HashStore {
 
-    private static final Logger log = LoggerFactory.getLogger(FileSystemHashStore.class);
+    private static final Logger log = LoggerFactory.getLogger(FileSystem2HashStore.class);
     private static final String CHUNK_TYPE = "chunks";
     private static final String FILE_TYPE = "files";
     private static final String FILE_EXT = ".hash";
     
     private final File envHome;
 
-    public FileSystemHashStore(File envHome) {
+    public FileSystem2HashStore(File envHome) {
         this.envHome = envHome;
     }
 
@@ -125,7 +125,7 @@ public class FileSystemHashStore implements HashStore {
 
     private File toPath(String type, String hash) {
         String group = hash.substring(0, 3);
-        String subGroup = hash.substring(0, 2);
+        String subGroup = hash.substring(3, 7);
         String pathName = type + "/" + group + "/" + subGroup + "/" + hash + FILE_EXT;
         File file = new File(envHome, pathName);
         return file;

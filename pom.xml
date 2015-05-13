@@ -87,6 +87,12 @@
             <version>2.0-alpha1</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.1</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
