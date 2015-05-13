@@ -16,17 +16,15 @@
  */
 package org.hashsplit4j.store;
 
+import org.hashsplit4j.api.ReceivingBlobStore;
 import org.hashsplit4j.store.berkeleyDbEnv.BerkeleyDbEnv;
 import org.hashsplit4j.store.berkeleyDbEnv.BerkeleyDbAccessor;
 import org.hashsplit4j.store.berkeleyDbEnv.Blob;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +74,6 @@ public class BerkeleyDbBlobStore implements BlobStore, ReceivingBlobStore {
 
         this.nPrefGroup = nPrefGroup;
         this.nPrefSubGroup = nPrefSubGroup;
-
         dbEnv.openEnv(envHome, // path to the environment home
                 false);         // Environment read-only?
 
@@ -256,7 +253,7 @@ public class BerkeleyDbBlobStore implements BlobStore, ReceivingBlobStore {
      * @param bytes 
      */
     @Override
-    public void pushBlob(String hash, byte[] bytes) {
+    public void pushBlobToQueue(String hash, byte[] bytes) {
         if(!hasBlob(hash)){
             setBlob(hash, bytes);
         }

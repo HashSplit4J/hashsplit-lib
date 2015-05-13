@@ -3,19 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.hashsplit4j.store;
-
-import org.hashsplit4j.api.BlobStore;
+package org.hashsplit4j.api;
 
 /**
  *
  * @author dylan
  */
-public interface PushingBlobStore extends BlobStore {
+public interface ReceivingBlobStore extends BlobStore {
 
     /**
      * 
-     * @param blobStore 
+     * @param hash
+     * @param bytes 
      */
-    public void setReceivingBlobStore(ReceivingBlobStore blobStore);
+    public void pushBlobToQueue(String hash, byte[] bytes);
 }

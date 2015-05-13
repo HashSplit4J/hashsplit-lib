@@ -5,6 +5,8 @@
  */
 package org.hashsplit4j.store;
 
+import org.hashsplit4j.api.ReceivingBlobStore;
+import org.hashsplit4j.api.PushingBlobStore;
 import org.hashsplit4j.api.BlobStore;
 
 /**
