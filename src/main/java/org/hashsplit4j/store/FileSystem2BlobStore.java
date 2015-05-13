@@ -15,12 +15,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.hashsplit4j.api.BlobImpl;
 import org.hashsplit4j.api.BlobStore;
@@ -41,8 +38,7 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
     private final Queue<BlobImpl> queue = new LinkedList<>();
     private ReceivingBlobStore receivingBlobStore;
     
-    private final ScheduledExecutorService processor = Executors
-            .newScheduledThreadPool(4);
+    private final ExecutorService processor = Executors.newFixedThreadPool(5);
     
     private Future<?> fsScanner;
 
@@ -180,7 +176,7 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
                     }
                 });
             } catch (IOException ex) {
-                Logger.getLogger(FileSystem2BlobStore.class.getName()).log(Level.SEVERE, null, ex);
+                log.error("Error walking directory", ex);
             }
         }
 

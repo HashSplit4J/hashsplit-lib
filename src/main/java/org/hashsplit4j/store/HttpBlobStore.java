@@ -36,7 +36,7 @@ import org.apache.http.util.EntityUtils;
  */
 public class HttpBlobStore implements BlobStore {
 
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(CachingBlobStore.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(HttpBlobStore.class);
 
     private final CredentialsProvider credsProvider;
     private int timeout = 5000;
