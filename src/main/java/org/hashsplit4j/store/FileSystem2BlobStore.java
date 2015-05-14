@@ -12,12 +12,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.LinkedList;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.hashsplit4j.api.BlobImpl;
 import org.hashsplit4j.api.BlobStore;
@@ -35,23 +38,25 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
 
     private final File root;
     private final EventManager eventManager;
-    private final Queue<BlobImpl> queue = new LinkedList<>();
+    private final BlockingQueue<BlobImpl> queue = new ArrayBlockingQueue<>(1000);
     private ReceivingBlobStore receivingBlobStore;
-    
+
     private final ExecutorService processor = Executors.newFixedThreadPool(5);
-    
+    private final TimerTask processQueue = new ProcessQueue();
+    private final Timer timer = new Timer();
+
     private Future<?> fsScanner;
 
     public FileSystem2BlobStore(File root) {
         this.root = root;
         this.eventManager = null;
-        processor.submit(new ProcessQueue());
+        timer.schedule(processQueue, 1000);
     }
 
     public FileSystem2BlobStore(File root, EventManager eventManager) throws IOException {
         this.root = root;
         this.eventManager = eventManager;
-        processor.submit(new ProcessQueue());
+        timer.schedule(processQueue, 1000);
     }
 
     @Override
@@ -113,7 +118,7 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
     @Override
     public void setReceivingBlobStore(ReceivingBlobStore blobStore) {
         this.receivingBlobStore = blobStore;
-        if(fsScanner != null && !fsScanner.isDone()){
+        if (fsScanner != null && !fsScanner.isDone()) {
             fsScanner.cancel(true);
         }
         fsScanner = processor.submit(new ScanFileSystem(root.toPath()));
@@ -123,20 +128,25 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
     public void pushBlobToQueue(String hash, byte[] bytes) {
         BlobImpl blob = new BlobImpl(hash, bytes);
         if (!queue.contains(blob)) {
-            queue.offer(new BlobImpl(hash, bytes));
-
+            try {
+                while (!queue.offer(blob)) {
+                    Thread.sleep(10);
+                }
+            } catch (InterruptedException ex) {
+                Logger.getLogger(FileSystem2BlobStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
-    private class ProcessQueue implements Runnable {
+    private class ProcessQueue extends TimerTask {
 
         @Override
         public void run() {
             BlobImpl blob = queue.poll();
-            if (blob != null) {
+            while (blob != null) {
                 setBlob(blob.getHash(), blob.getBytes());
+                blob = queue.poll();
             }
-            processor.submit(this);
         }
     }
 
@@ -144,8 +154,9 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
         if (this.receivingBlobStore != null && blob.isFile() && blob.exists()) {
             String fileName = blob.getName();
             byte[] arr = FileUtils.readFileToByteArray(blob);
-            this.receivingBlobStore.pushBlobToQueue(fileName, arr);
-
+            if (!this.receivingBlobStore.hasBlob(fileName)) {
+                this.receivingBlobStore.pushBlobToQueue(fileName, arr);
+            }
         }
     }
 
@@ -164,12 +175,10 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             throws IOException {
-                        Objects.requireNonNull(file);
-                        Objects.requireNonNull(attrs);
 
-                        if (!attrs.isDirectory()) {
-                            File f = file.toFile();
-                            pushBlobTo(f);
+                        if (file != null && attrs != null && !attrs.isDirectory()) {
+                            File blob = file.toFile();
+                            pushBlobTo(blob);
                         }
 
                         return FileVisitResult.CONTINUE;
