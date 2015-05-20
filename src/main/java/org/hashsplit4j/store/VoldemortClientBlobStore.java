@@ -1,31 +1,41 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.hashsplit4j.store;
 
 import org.hashsplit4j.api.BlobStore;
+import voldemort.client.StoreClient;
+import voldemort.client.StoreClientFactory;
+import voldemort.versioning.Versioned;
 
 /**
  *
  * @author dylan
  */
-public class VoldemortClientBlobStore implements BlobStore{
-    
+public class VoldemortClientBlobStore implements BlobStore {
+
+    private final StoreClientFactory storeClientFactory;
+    private final StoreClient<String, byte[]> client;
+
+    public VoldemortClientBlobStore(StoreClientFactory storeClientFactory, String storeName) {
+        this.storeClientFactory = storeClientFactory;
+        this.client = this.storeClientFactory.getStoreClient(storeName);
+    }
+
     @Override
     public void setBlob(String hash, byte[] bytes) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (!hasBlob(hash)) {
+            client.put(hash, bytes);
+        }
     }
 
     @Override
     public byte[] getBlob(String hash) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Versioned<byte[]> versioned = client.get(hash);
+        return versioned.getValue();
     }
 
     @Override
     public boolean hasBlob(String hash) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Versioned<byte[]> versioned = client.get(hash);
+        return versioned != null;
     }
-    
+
 }
