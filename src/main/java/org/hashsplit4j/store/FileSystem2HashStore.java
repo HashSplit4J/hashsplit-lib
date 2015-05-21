@@ -7,12 +7,12 @@ package org.hashsplit4j.store;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import org.hashsplit4j.api.Fanout;
-import org.hashsplit4j.api.FanoutImpl;
 import org.hashsplit4j.utils.FileUtil;
 import org.hashsplit4j.api.HashStore;
+import org.hashsplit4j.utils.FileSystem2Utils;
+import org.hashsplit4j.utils.StringFanoutUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,23 +20,22 @@ import org.slf4j.LoggerFactory;
  *
  * @author dylan
  */
-public class FileSystemHashStore implements HashStore {
+public class FileSystem2HashStore implements HashStore {
 
-    private static final Logger log = LoggerFactory.getLogger(FileSystemHashStore.class);
+    private static final Logger log = LoggerFactory.getLogger(FileSystem2HashStore.class);
     private static final String CHUNK_TYPE = "chunks";
     private static final String FILE_TYPE = "files";
-    private static final String FILE_EXT = ".hash";
     
     private final File envHome;
 
-    public FileSystemHashStore(File envHome) {
+    public FileSystem2HashStore(File envHome) {
         this.envHome = envHome;
     }
 
     @Override
     public void setChunkFanout(String hash, List<String> blobHashes, long actualContentLength) {
-        String hashes = formatFanout(blobHashes, actualContentLength);
-        File chunkFanout = toPath(CHUNK_TYPE, hash);
+        String hashes = StringFanoutUtils.formatFanout(blobHashes, actualContentLength);
+        File chunkFanout = FileSystem2Utils.toFileWithPrefix(envHome, hash, CHUNK_TYPE);
         try {
             FileUtil.writeFile(chunkFanout, hashes.getBytes(), false, Boolean.TRUE);
         } catch (IOException ex) {
@@ -46,8 +45,8 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public void setFileFanout(String hash, List<String> fanoutHashes, long actualContentLength) {
-        String hashes = formatFanout(fanoutHashes, actualContentLength);
-        File fileFanout = toPath(FILE_TYPE, hash);
+        String hashes = StringFanoutUtils.formatFanout(fanoutHashes, actualContentLength);
+        File fileFanout = FileSystem2Utils.toFileWithPrefix(envHome, hash, FILE_TYPE);
         try {
             FileUtil.writeFile(fileFanout, hashes.getBytes(), false, Boolean.TRUE);
         } catch (IOException ex) {
@@ -57,11 +56,11 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public Fanout getFileFanout(String fileHash) {
-        File fileFanout = toPath(FILE_TYPE, fileHash);
+        File fileFanout = FileSystem2Utils.toFileWithPrefix(envHome, fileHash, FILE_TYPE);
         if (fileFanout.exists()) {
             try {
                 String hashes = FileUtil.readFile(fileFanout);
-                return parseFanout(hashes);
+                return StringFanoutUtils.parseFanout(hashes);
             } catch (IOException ex) {
                 log.info("Unable to read file fanout to file", ex);
             }
@@ -71,11 +70,11 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public Fanout getChunkFanout(String fanoutHash) {
-        File chunkFanout = toPath(CHUNK_TYPE, fanoutHash);
+        File chunkFanout = FileSystem2Utils.toFileWithPrefix(envHome, fanoutHash, CHUNK_TYPE);
         if (chunkFanout.exists()) {
             try {
                 String hashes = FileUtil.readFile(chunkFanout);
-                return parseFanout(hashes);
+                return StringFanoutUtils.parseFanout(hashes);
             } catch (IOException ex) {
                 log.info("Unable to read chunk fanout to file", ex);
             }
@@ -85,49 +84,13 @@ public class FileSystemHashStore implements HashStore {
 
     @Override
     public boolean hasChunk(String fanoutHash) {
-        File chunkFanout = toPath(CHUNK_TYPE, fanoutHash);
+        File chunkFanout = FileSystem2Utils.toFileWithPrefix(envHome, fanoutHash, CHUNK_TYPE);
         return chunkFanout.exists();
     }
 
     @Override
     public boolean hasFile(String fileHash) {
-        File fileFanout = toPath(FILE_TYPE, fileHash);
+        File fileFanout = FileSystem2Utils.toFileWithPrefix(envHome, fileHash, FILE_TYPE);
         return fileFanout.exists();
-    }
-
-    private String formatFanout(List<String> blobHashes, long actualContentLength) {
-        StringBuilder sb = new StringBuilder();
-
-        for (String hash : blobHashes) {
-            sb.append(hash).append(",");
-        }
-
-        sb.append(actualContentLength);
-
-        return sb.toString();
-    }
-
-    private Fanout parseFanout(String fan) {
-        String[] parts = fan.split(",");
-        List<String> blobHashes = new ArrayList<>();
-        Long actualContentLength = null;
-        int len = parts.length;
-        int count = 0;
-        for (String part : parts) {
-            if (++count < len) {
-                blobHashes.add(part);
-            } else {
-                actualContentLength = Long.valueOf(part);
-            }
-        }
-        return new FanoutImpl(blobHashes, actualContentLength);
-    }
-
-    private File toPath(String type, String hash) {
-        String group = hash.substring(0, 3);
-        String subGroup = hash.substring(0, 2);
-        String pathName = type + "/" + group + "/" + subGroup + "/" + hash + FILE_EXT;
-        File file = new File(envHome, pathName);
-        return file;
     }
 }

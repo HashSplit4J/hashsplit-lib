@@ -34,23 +34,10 @@ public class BerkeleyDbBlobStoreImportTest {
     }
     
     //@Test
-    public void testImportted() throws FileNotFoundException {
-        File dir = new File("src/test/resources/import-test");
-        assertTrue(dir.exists());
-        assertTrue(dir.isDirectory());
-        
-        int importted = blobStore.importFiles(dir);
-        assertEquals(7, importted);
-    }
-    
-    //@Test
     public void testImporttedHasBlob() throws FileNotFoundException {
     	File dir = new File("src/test/resources/import-test");
         assertTrue(dir.exists());
         assertTrue(dir.isDirectory());
-        
-        int importted = blobStore.importFiles(dir);
-        assertEquals(7, importted);
         
         String hash = "1c8e930f68f4c260760e0d2e238e905a978e4259";
         assertTrue(blobStore.hasBlob(hash));
@@ -80,9 +67,6 @@ public class BerkeleyDbBlobStoreImportTest {
         assertTrue(dir.exists());
         assertTrue(dir.isDirectory());
         
-        int importted = blobStore.importFiles(dir);
-        assertEquals(7, importted);
-        
         String hash = "1c8e930f68f4c260760e0d2e238e905a978e4259";
         File file = new File("src/test/resources/import-test/1c8e93/0f68f4/c26076/0e0d2e/238e90/5a978e/1c8e930f68f4c260760e0d2e238e905a978e4259");
         byte[] contents = FileUtils.readFileToByteArray(file);
@@ -106,10 +90,6 @@ public class BerkeleyDbBlobStoreImportTest {
         System.out.println("importing from: " + dir.getAbsolutePath());
         assertTrue(dir.exists());
         assertTrue(dir.isDirectory());
-        
-        blobStore.importFiles(dir);
-        // Should not have generated any hash groups yet
-        assertEquals(0, blobStore.getRootGroups().size());
         
         // Now generate
         blobStore.generateHashes();

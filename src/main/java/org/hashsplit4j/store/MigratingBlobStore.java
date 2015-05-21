@@ -5,6 +5,8 @@
  */
 package org.hashsplit4j.store;
 
+import org.hashsplit4j.api.ReceivingBlobStore;
+import org.hashsplit4j.api.PushingBlobStore;
 import org.hashsplit4j.api.BlobStore;
 
 /**
@@ -19,6 +21,13 @@ public class MigratingBlobStore implements BlobStore{
     public MigratingBlobStore(BlobStore newBlobStore, BlobStore oldBlobStore){
         this.newBlobStore = newBlobStore;
         this.oldBlobStore = oldBlobStore;
+        if(oldBlobStore instanceof PushingBlobStore){
+            PushingBlobStore pBlobStore = (PushingBlobStore) oldBlobStore;
+            if(newBlobStore instanceof ReceivingBlobStore){
+                ReceivingBlobStore rBlobStore = (ReceivingBlobStore) newBlobStore;
+                pBlobStore.setReceivingBlobStore(rBlobStore);
+            }
+        }
     }
 
     @Override
