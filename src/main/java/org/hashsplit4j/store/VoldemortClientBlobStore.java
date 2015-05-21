@@ -29,7 +29,10 @@ public class VoldemortClientBlobStore implements BlobStore {
     @Override
     public byte[] getBlob(String hash) {
         Versioned<byte[]> versioned = client.get(hash);
-        return versioned.getValue();
+        if (versioned != null) {
+            return versioned.getValue();
+        }
+        return null;
     }
 
     @Override

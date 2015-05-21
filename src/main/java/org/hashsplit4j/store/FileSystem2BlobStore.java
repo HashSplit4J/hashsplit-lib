@@ -26,6 +26,7 @@ import org.hashsplit4j.api.BlobImpl;
 import org.hashsplit4j.api.BlobStore;
 import org.hashsplit4j.utils.FileUtil;
 import org.hashsplit4j.event.NewFileBlobEvent;
+import org.hashsplit4j.utils.FileSystem2Utils;
 
 /**
  * Stores blobs straight into a file system
@@ -65,7 +66,7 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
     }
 
     public void setBlob(String hash, byte[] bytes, boolean enableEvent) {
-        File blob = toPath(hash);
+        File blob = FileSystem2Utils.toFile(root, hash);
         if (blob.exists()) {
             log.trace("FileSystemBlobStore: setBlob: file exists: {}", blob.getAbsolutePath());
             return; // already exists, so dont overwrite
@@ -88,7 +89,7 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
 
     @Override
     public byte[] getBlob(String hash) {
-        File blob = toPath(hash);
+        File blob = FileSystem2Utils.toFile(root, hash);
         if (!blob.exists()) {
             return null;
         }
@@ -103,16 +104,8 @@ public class FileSystem2BlobStore implements BlobStore, PushingBlobStore, Receiv
 
     @Override
     public boolean hasBlob(String hash) {
-        File blob = toPath(hash);
+        File blob = FileSystem2Utils.toFile(root, hash);
         return blob.exists();
-    }
-
-    private File toPath(String hash) {
-        String group = hash.substring(0, 3);
-        String subGroup = hash.substring(3, 7);
-        String pathName = group + "/" + subGroup + "/" + hash;
-        File file = new File(root, pathName);
-        return file;
     }
 
     @Override

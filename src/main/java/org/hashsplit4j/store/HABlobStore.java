@@ -44,7 +44,7 @@ public class HABlobStore implements BlobStore {
         for (int i = 0; i < retries; i++) {
             try {
                 _setBlob(hash, bytes);
-                return ;
+                return;
             } catch (Exception e) {
                 log.warn("Failed to setBlob on both stores. Retry=" + i + " of " + retries, e);
                 last = e;
@@ -54,16 +54,18 @@ public class HABlobStore implements BlobStore {
     }
 
     private void _setBlob(String hash, byte[] bytes) throws Exception {
+        BlobStore p = curPrimary;
+        BlobStore s = curSecondary;
         try {
-            curPrimary.setBlob(hash, bytes);
-            enqueue(hash, bytes, curSecondary);
+            p.setBlob(hash, bytes);
+            enqueue(hash, bytes, s);
         } catch (Exception ex) {
-            log.warn("setBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage() + " blob size: " + bytes.length);
-            log.warn("try on seconday: " + curSecondary + " ...");
-            curSecondary.setBlob(hash, bytes);
-            enqueue(hash, bytes, curPrimary);
+            log.warn("setBlob failed on primary: " + p + " because of: " + ex.getMessage() + " blob size: " + bytes.length);
+            log.warn("try on seconday: " + s + " ...");
+            s.setBlob(hash, bytes);
+            enqueue(hash, bytes, p);
             log.warn("setBlob succeeded on secondary");
-            switchStores();
+            switchStores(p, s);
         }
 
     }
@@ -83,28 +85,30 @@ public class HABlobStore implements BlobStore {
     @Override
     public byte[] getBlob(String hash) {
         BlobStore from;
+        BlobStore p = curPrimary;
+        BlobStore s = curSecondary;
         byte[] arr;
         try {
-            from = curPrimary;
-            arr = curPrimary.getBlob(hash);
+            from = p;
+            arr = p.getBlob(hash);
             if (arr == null) {
                 if (trySecondaryWhenNotFound && curSecondary != null) {
                     log.info("Not found in primary, and trySecondaryWhenNotFound is true, so try secondary");
-                    from = curSecondary;
-                    arr = curSecondary.getBlob(hash);
+                    from = s;
+                    arr = s.getBlob(hash);
                 }
             }
         } catch (Exception ex) {
-            log.warn("getBlob failed on primary: " + curPrimary + " because of: " + ex.getMessage());
-            log.warn("try on seconday: " + curSecondary + " ...");
+            log.warn("getBlob failed on primary: " + p + " because of: " + ex.getMessage());
+            log.warn("try on seconday: " + s + " ...");
             try {
-                from = curSecondary;
-                arr = curSecondary.getBlob(hash);
+                from = s;
+                arr = s.getBlob(hash);
                 log.warn("getBlob succeeded on secondary");
             } catch (Exception e) {
-                throw new RuntimeException("Failed to lookup from secondary: " + secondary, e);
+                throw new RuntimeException("Failed to lookup from secondary: " + s, e);
             }
-            switchStores();
+            switchStores(p, s);
         }
 
         if (validate && (arr != null)) {
@@ -127,18 +131,16 @@ public class HABlobStore implements BlobStore {
         this.trySecondaryWhenNotFound = trySecondaryWhenNotFound;
     }
 
-    private synchronized void switchStores() {
+    private synchronized void switchStores(BlobStore primary, BlobStore secondary) {
         if (secondary == null) {
             log.warn("switchStores: Cant switch because there is no configured secondary");
             // Cant switch
             return;
         }
         log.warn("Switching stores due to primary failure...");
-        BlobStore newPrimary = curSecondary;
-        BlobStore newSecondary = curPrimary;
 
-        this.curPrimary = newPrimary;
-        this.curSecondary = newSecondary;
+        this.curPrimary = secondary;
+        this.curSecondary = primary;
         log.warn("Done switching stores. New primary=" + curPrimary + " New seconday=" + curSecondary);
     }
 
