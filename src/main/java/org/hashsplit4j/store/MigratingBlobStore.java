@@ -4,9 +4,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.hashsplit4j.api.BlobImpl;
 import org.hashsplit4j.api.BlobStore;
 import org.slf4j.LoggerFactory;
@@ -22,20 +19,15 @@ public class MigratingBlobStore implements BlobStore {
     private final BlobStore newBlobStore;
     private final BlobStore oldBlobStore;
     private final ExecutorService exService;
-    private final ScheduledExecutorService scheduleService;
     private final BlockingQueue<BlobImpl> queue = new ArrayBlockingQueue<>(1000);
-    private final QueueMonitorRunnable monitor;
-    
-    private Future<?> blobQueue = null;
 
     public MigratingBlobStore(BlobStore newBlobStore, BlobStore oldBlobStore) {
         this.newBlobStore = newBlobStore;
         this.oldBlobStore = oldBlobStore;
 
         exService = Executors.newCachedThreadPool();
-        scheduleService = Executors.newScheduledThreadPool(5); // 5 Threads max
-        monitor = new QueueMonitorRunnable();
-        scheduleService.scheduleAtFixedRate(monitor, 30, 30, TimeUnit.SECONDS);
+        BlobQueueRunnable r = new BlobQueueRunnable(this.newBlobStore);
+        exService.submit(r);
     }
 
     @Override
@@ -79,29 +71,21 @@ public class MigratingBlobStore implements BlobStore {
 
         @Override
         public void run() {
-            try {
-                BlobImpl blob = queue.take();
-                while (true) {
+            BlobImpl blob;
+            while (true) {
+                try {
+                    blob = queue.take();
                     if (blob != null) {
                         blobStore.setBlob(blob.getHash(), blob.getBytes());
                     }
-                    blob = queue.take();
+                } catch (Exception ex) {
+                    if (ex instanceof InterruptedException) {
+                        log.error("An InterruptedException was thrown with queue {}", queue, ex);
+                        throw new RuntimeException(ex);
+                    } else {
+                        log.error("Exception inserting blob into store:{}", blobStore, ex);
+                    }
                 }
-            } catch (InterruptedException ex) {
-                log.error("Exception inserting blob into store:" + blobStore, ex);
-                throw new RuntimeException(ex);
-            }
-        }
-
-    }
-
-    public class QueueMonitorRunnable implements Runnable {
-
-        @Override
-        public void run() {
-            if (blobQueue == null || blobQueue.isCancelled() || blobQueue.isDone()) {
-                BlobQueueRunnable r = new BlobQueueRunnable(newBlobStore);
-                blobQueue = exService.submit(r);
             }
         }
     }
