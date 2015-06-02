@@ -3,6 +3,8 @@ package org.hashsplit4j.store;
 import org.hashsplit4j.api.BlobStore;
 import voldemort.client.StoreClient;
 import voldemort.client.StoreClientFactory;
+import voldemort.cluster.Node;
+import voldemort.cluster.failuredetector.FailureDetectorListener;
 import voldemort.versioning.Versioned;
 
 /**
@@ -17,6 +19,18 @@ public class VoldemortClientBlobStore implements BlobStore {
     public VoldemortClientBlobStore(StoreClientFactory storeClientFactory, String storeName) {
         this.storeClientFactory = storeClientFactory;
         this.client = this.storeClientFactory.getStoreClient(storeName);
+        this.storeClientFactory.getFailureDetector().addFailureDetectorListener(new FailureDetectorListener() {
+
+            @Override
+            public void nodeUnavailable(Node node) {
+                System.out.println("Node lost=" + node.getId());
+            }
+
+            @Override
+            public void nodeAvailable(Node node) {
+                System.out.println("Node gained=" + node.getId());
+            }
+        });
     }
 
     @Override
@@ -37,8 +51,12 @@ public class VoldemortClientBlobStore implements BlobStore {
 
     @Override
     public boolean hasBlob(String hash) {
-        Versioned<byte[]> versioned = client.get(hash);
-        return versioned != null;
+        try {
+            Versioned<byte[]> versioned = client.get(hash);
+            return versioned != null;
+        } catch (Exception ex) {
+            System.out.println("Error " + ex.getMessage());
+            return false;
+        }
     }
-
 }
