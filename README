@@ -2,8 +2,8 @@ This is a library for splitting files into chunks which are fairly stable with r
 allows those chunks to be used as the basis for efficient file syncronisation.
 
 
-Latest build: 2.1.1
-    http://milton.io/maven/hashsplit4j/hashsplit4j-lib/2.1.1/hashsplit4j-lib-2.1.1.jar
+Latest build: 2.3.2
+    http://milton.io/maven/hashsplit4j/hashsplit4j-lib/2.3.2/hashsplit4j-lib-2.3.2.jar
 
 Maven:
 The hashsplit4j jar is published to the milton.io maven repo. To use it add the 
@@ -13,7 +13,7 @@ dependency as normal, and add the milton repo..
         <dependency>
             <groupId>hashsplit4j</groupId>
             <artifactId>hashsplit4j-lib</artifactId>
-            <version>2.1.1</version>
+            <version>2.3.2</version>
         </dependency>
     </dependencies>
 
