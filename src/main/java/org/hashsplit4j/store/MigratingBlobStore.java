@@ -32,27 +32,56 @@ public class MigratingBlobStore implements BlobStore {
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
-        newBlobStore.setBlob(hash, bytes);
+        try {
+            newBlobStore.setBlob(hash, bytes);
+            return;
+        } catch (Exception ex) {
+            log.warn("Failed to store blob to newBlobStore {} with message {}", newBlobStore, ex.getMessage(), ex);
+        }
+
+        try {
+            log.info("Trying to store blob on oldBlobStore {}", oldBlobStore);
+            oldBlobStore.setBlob(hash, bytes);
+        } catch (Exception ex) {
+            log.warn("Failed to store blob to oldBlobStore {} with message {}", oldBlobStore, ex.getMessage(), ex);
+        }
     }
 
     @Override
     public byte[] getBlob(String hash) {
         log.info("getBlob={}", hash);
-        if (newBlobStore.hasBlob(hash)) {
-            log.info("got blob from={}", newBlobStore);
-            return newBlobStore.getBlob(hash);
-        } else if (oldBlobStore.hasBlob(hash)) {
-            log.info("got blob from={}", oldBlobStore);
-            byte[] data = oldBlobStore.getBlob(hash);
-            enqueue(hash, data);
-            return data;
+
+        try {
+            if (newBlobStore.hasBlob(hash)) {
+                log.info("got blob from={}", newBlobStore);
+                return newBlobStore.getBlob(hash);
+            }
+        } catch (Exception ex) {
+            log.warn("getBlob Failed on newBlobStore {} because of:{}", newBlobStore, ex.getMessage(), ex);
         }
+
+        try {
+            if (oldBlobStore.hasBlob(hash)) {
+                log.info("got blob from={}", oldBlobStore);
+                byte[] data = oldBlobStore.getBlob(hash);
+                enqueue(hash, data);
+                return data;
+            }
+        } catch (Exception ex) {
+            log.warn("getBlob Failed on oldBlobStore {} because of:{}", oldBlobStore, ex.getMessage(), ex);
+        }
+
         return null;
     }
 
     @Override
     public boolean hasBlob(String hash) {
-        return newBlobStore.hasBlob(hash) || oldBlobStore.hasBlob(hash);
+        try {
+            return newBlobStore.hasBlob(hash) || oldBlobStore.hasBlob(hash);
+        } catch (Exception ex) {
+            log.warn("failed hasBlob with message {}", ex.getMessage(), ex);
+        }
+        return false;
     }
 
     private void enqueue(String hash, byte[] bytes) {
