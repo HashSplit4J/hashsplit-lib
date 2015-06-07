@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.hashsplit4j.store;
 
 import java.util.List;
@@ -10,6 +5,8 @@ import org.hashsplit4j.api.Fanout;
 import org.hashsplit4j.api.HashStore;
 
 /**
+ * Attempts to get from the new store. If that fails will get from the old store,
+ * and then add to the new store.
  *
  * @author dylan
  */
@@ -58,7 +55,7 @@ public class MigratingHashStore implements HashStore {
             }
             return fanout;
         }
-        return null;                
+        return null;
     }
 
     @Override
