@@ -55,6 +55,8 @@ public class MigratingBlobStore implements BlobStore {
             if (newBlobStore.hasBlob(hash)) {
                 log.info("got blob from={}", newBlobStore);
                 return newBlobStore.getBlob(hash);
+            }else{
+                log.info("Could not find blob {} on newBlobStore {}", hash, newBlobStore);
             }
         } catch (Exception ex) {
             log.warn("getBlob Failed on newBlobStore {} because of:{}", newBlobStore, ex.getMessage(), ex);
@@ -66,6 +68,8 @@ public class MigratingBlobStore implements BlobStore {
                 byte[] data = oldBlobStore.getBlob(hash);
                 enqueue(hash, data);
                 return data;
+            }else{
+                log.info("Could not find blob {} on oldBlobStore {}", hash, oldBlobStore);
             }
         } catch (Exception ex) {
             log.warn("getBlob Failed on oldBlobStore {} because of:{}", oldBlobStore, ex.getMessage(), ex);
