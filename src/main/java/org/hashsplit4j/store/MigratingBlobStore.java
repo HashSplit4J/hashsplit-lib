@@ -1,11 +1,9 @@
 package org.hashsplit4j.store;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.hashsplit4j.api.BlobImpl;
 import org.hashsplit4j.api.BlobStore;
+import org.hashsplit4j.runnables.BlobQueueRunnable;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -19,15 +17,14 @@ public class MigratingBlobStore implements BlobStore {
     private final BlobStore newBlobStore;
     private final BlobStore oldBlobStore;
     private final ExecutorService exService;
-    private final BlockingQueue<BlobImpl> queue = new ArrayBlockingQueue<>(1000);
+    private final BlobQueueRunnable queue;
 
     public MigratingBlobStore(BlobStore newBlobStore, BlobStore oldBlobStore) {
         this.newBlobStore = newBlobStore;
         this.oldBlobStore = oldBlobStore;
-
+        this.queue = new BlobQueueRunnable(this.newBlobStore, 1000);
         exService = Executors.newCachedThreadPool();
-        BlobQueueRunnable r = new BlobQueueRunnable(this.newBlobStore);
-        exService.submit(r);
+        exService.submit(this.queue);
     }
 
     @Override
@@ -55,7 +52,7 @@ public class MigratingBlobStore implements BlobStore {
             if (newBlobStore.hasBlob(hash)) {
                 log.info("got blob from={}", newBlobStore);
                 return newBlobStore.getBlob(hash);
-            }else{
+            } else {
                 log.info("Could not find blob {} on newBlobStore {}", hash, newBlobStore);
             }
         } catch (Exception ex) {
@@ -68,7 +65,7 @@ public class MigratingBlobStore implements BlobStore {
                 byte[] data = oldBlobStore.getBlob(hash);
                 enqueue(hash, data);
                 return data;
-            }else{
+            } else {
                 log.info("Could not find blob {} on oldBlobStore {}", hash, oldBlobStore);
             }
         } catch (Exception ex) {
@@ -90,36 +87,6 @@ public class MigratingBlobStore implements BlobStore {
 
     private void enqueue(String hash, byte[] bytes) {
         log.info("Enqueuing blob={}", hash);
-        BlobImpl blob = new BlobImpl(hash, bytes);
-        queue.offer(blob);
-    }
-
-    public class BlobQueueRunnable implements Runnable {
-
-        private final BlobStore blobStore;
-
-        public BlobQueueRunnable(BlobStore blobStore) {
-            this.blobStore = blobStore;
-        }
-
-        @Override
-        public void run() {
-            BlobImpl blob;
-            while (true) {
-                try {
-                    blob = queue.take();
-                    if (blob != null) {
-                        blobStore.setBlob(blob.getHash(), blob.getBytes());
-                    }
-                } catch (Exception ex) {
-                    if (ex instanceof InterruptedException) {
-                        log.error("An InterruptedException was thrown with queue {}", queue, ex);
-                        throw new RuntimeException(ex);
-                    } else {
-                        log.error("Exception inserting blob into store:{}", blobStore, ex);
-                    }
-                }
-            }
-        }
+        queue.addBlob(hash, bytes);
     }
 }

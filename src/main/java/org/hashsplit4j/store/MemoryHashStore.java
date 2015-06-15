@@ -15,9 +15,8 @@ import org.hashsplit4j.api.HashStore;
  */
 public class MemoryHashStore implements HashStore{
     
-    private Map<String,Fanout> mapOfChunkFanouts = new HashMap<String,Fanout>(); // keyed by the crc of the fanout chunk, gives a list of chunk crc's
-    
-    private Map<String,Fanout> mapOfFileFanouts = new HashMap<String,Fanout>(); // keyed by the crc of the fanout chunk, gives a list of chunk crc's
+    private final Map<String,Fanout> mapOfChunkFanouts = new HashMap<>(); // keyed by the SHA1 of the fanout chunk, gives a list of chunk SHA1's
+    private final Map<String,Fanout> mapOfFileFanouts = new HashMap<>(); // keyed by the crc of the fanout chunk, gives a list of chunk SHA1's
     
     @Override
     public void setChunkFanout(String crc, List<String> childCrcs, long actualContentLength) {

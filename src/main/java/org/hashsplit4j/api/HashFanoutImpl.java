@@ -1,22 +1,37 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package org.hashsplit4j.api;
 
 import java.util.List;
 
 /**
  *
- * @author brad
+ * @author dylan
  */
-public class FanoutImpl implements Fanout {
+public class HashFanoutImpl implements Fanout {
 
+    private String hash;
     private List<String> hashes;
     private long actualContentLength;
 
-    public FanoutImpl() {
+    public HashFanoutImpl() {
     }
 
-    public FanoutImpl(List<String> hashes, long actualContentLength) {
+    public HashFanoutImpl(String hash, List<String> hashes, long actualContentLength) {
+        this.hash = hash;
         this.hashes = hashes;
         this.actualContentLength = actualContentLength;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
     }
 
     @Override
