@@ -1,6 +1,7 @@
 package org.hashsplit4j.store;
 
 import org.hashsplit4j.api.BlobStore;
+import org.slf4j.LoggerFactory;
 import voldemort.client.StoreClient;
 import voldemort.client.StoreClientFactory;
 import voldemort.cluster.Node;
@@ -13,6 +14,8 @@ import voldemort.versioning.Versioned;
  */
 public class VoldemortClientBlobStore implements BlobStore {
 
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(VoldemortClientBlobStore.class);
+    
     private final StoreClientFactory storeClientFactory;
     private final StoreClient<String, byte[]> client;
 
@@ -23,18 +26,19 @@ public class VoldemortClientBlobStore implements BlobStore {
 
             @Override
             public void nodeUnavailable(Node node) {
-                System.out.println("Node lost=" + node.getId());
+                log.info("Node lost=" + node.getId());
             }
 
             @Override
             public void nodeAvailable(Node node) {
-                System.out.println("Node gained=" + node.getId());
+                log.info("Node gained=" + node.getId());
             }
         });
     }
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
+        log.info("setBlob hash={}", hash);
         if (!hasBlob(hash)) {
             client.put(hash, bytes);
         }
@@ -42,6 +46,7 @@ public class VoldemortClientBlobStore implements BlobStore {
 
     @Override
     public byte[] getBlob(String hash) {
+        log.info("getBlob hash={}", hash);
         Versioned<byte[]> versioned = client.get(hash);
         if (versioned != null) {
             return versioned.getValue();
@@ -51,6 +56,7 @@ public class VoldemortClientBlobStore implements BlobStore {
 
     @Override
     public boolean hasBlob(String hash) {
+        log.info("hasBlob hash={}", hash);
         try {
             Versioned<byte[]> versioned = client.get(hash);
             return versioned != null;
