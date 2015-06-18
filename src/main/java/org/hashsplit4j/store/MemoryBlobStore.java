@@ -9,7 +9,8 @@ import org.hashsplit4j.api.BlobStore;
  * @author brad
  */
 public class MemoryBlobStore implements BlobStore {
-    private Map<String,Chunk> mapOfChunks = new HashMap<String, Chunk>();    
+
+    private final Map<String, Chunk> mapOfChunks = new HashMap<>();
 
     private long totalSize;
 
@@ -17,28 +18,26 @@ public class MemoryBlobStore implements BlobStore {
     public boolean hasBlob(String hash) {
         return mapOfChunks.containsKey(hash);
     }
-    
-    
-    
+
     @Override
     public byte[] getBlob(String hash) {
         Chunk chunk = mapOfChunks.get(hash);
-        if( chunk != null ) {
+        if (chunk != null) {
             return chunk.blob;
         } else {
             return null;
         }
     }
-    
+
     @Override
     public void setBlob(String hash, byte[] bytes) {
         Chunk chunk = new Chunk();
         chunk.crc = hash;
         chunk.start = totalSize;
-        chunk.length = bytes.length;        
+        chunk.length = bytes.length;
         chunk.blob = bytes;
         mapOfChunks.put(hash, chunk);
-        totalSize+=chunk.length;
+        totalSize += chunk.length;
         //System.out.println("setBlob: " + hash + " size: " + bytes.length);
     }
 
@@ -49,15 +48,15 @@ public class MemoryBlobStore implements BlobStore {
     public Map<String, Chunk> getMapOfChunks() {
         return mapOfChunks;
     }
-    
-    
+
     /**
-     * A chunk just identifies where the data for a given crc is. Useful on the client side
+     * A chunk just identifies where the data for a given crc is. Useful on the
+     * client side
      */
     public class Chunk {
         String crc;
         long start;
         int length;
         byte[] blob;
-    }                        
+    }
 }
