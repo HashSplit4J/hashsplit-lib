@@ -15,7 +15,7 @@ import voldemort.versioning.Versioned;
 public class VoldemortClientBlobStore implements BlobStore {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(VoldemortClientBlobStore.class);
-    
+
     private final StoreClientFactory storeClientFactory;
     private final StoreClient<String, byte[]> client;
 
@@ -39,9 +39,7 @@ public class VoldemortClientBlobStore implements BlobStore {
     @Override
     public void setBlob(String hash, byte[] bytes) {
         log.info("setBlob hash={}", hash);
-        if (!hasBlob(hash)) {
-            client.put(hash, bytes);
-        }
+        client.put(hash, bytes);
     }
 
     @Override
