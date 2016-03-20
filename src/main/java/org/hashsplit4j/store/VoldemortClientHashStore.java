@@ -26,24 +26,20 @@ public class VoldemortClientHashStore implements HashStore {
 
     @Override
     public void setChunkFanout(String hash, List<String> blobHashes, long actualContentLength) {
-        if (!hasChunk(hash)) {
-            String fanout = StringFanoutUtils.formatFanout(blobHashes, actualContentLength);
-            chunkFanoutClient.put(hash, fanout);
-        }
+        String fanout = StringFanoutUtils.formatFanout(blobHashes, actualContentLength);
+        chunkFanoutClient.put(hash, fanout);
     }
 
     @Override
     public void setFileFanout(String hash, List<String> fanoutHashes, long actualContentLength) {
-        if (!hasFile(hash)) {
-            String fanout = StringFanoutUtils.formatFanout(fanoutHashes, actualContentLength);
-            fileFanoutClient.put(hash, fanout);
-        }
+        String fanout = StringFanoutUtils.formatFanout(fanoutHashes, actualContentLength);
+        fileFanoutClient.put(hash, fanout);
     }
 
     @Override
     public Fanout getFileFanout(String fileHash) {
         Versioned<String> versioned = fileFanoutClient.get(fileHash);
-        if(versioned != null){
+        if (versioned != null) {
             String f = versioned.getValue();
             Fanout fanout = StringFanoutUtils.parseFanout(f);
             return fanout;
@@ -54,7 +50,7 @@ public class VoldemortClientHashStore implements HashStore {
     @Override
     public Fanout getChunkFanout(String fanoutHash) {
         Versioned<String> versioned = chunkFanoutClient.get(fanoutHash);
-        if(versioned != null){
+        if (versioned != null) {
             String f = versioned.getValue();
             Fanout fanout = StringFanoutUtils.parseFanout(f);
             return fanout;
