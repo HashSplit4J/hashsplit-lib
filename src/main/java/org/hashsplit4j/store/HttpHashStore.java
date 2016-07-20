@@ -68,6 +68,9 @@ public class HttpHashStore implements HashStore {
     public Fanout getChunkFanout(String fanoutHash) {
         Path destPath = chunkFanoutPath.child(fanoutHash);
         byte[] arr = httpTransport.get(destPath.toString());
+        if( arr == null ) {
+            return null;
+        }
         ByteArrayInputStream bin = new ByteArrayInputStream(arr);
         Fanout f;
         try {
