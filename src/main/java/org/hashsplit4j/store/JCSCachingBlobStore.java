@@ -17,6 +17,7 @@ package org.hashsplit4j.store;
 import org.apache.jcs.JCS;
 import org.apache.jcs.access.CacheAccess;
 import org.apache.jcs.access.exception.CacheException;
+import org.apache.jcs.access.exception.ObjectExistsException;
 import org.apache.jcs.engine.behavior.ICompositeCacheAttributes;
 import org.hashsplit4j.api.BlobStore;
 import org.slf4j.Logger;
@@ -73,6 +74,8 @@ public class JCSCachingBlobStore implements BlobStore {
                     if (cache.get(hash) == null) {
                         cache.putSafe(hash, arr);
                     }
+                } catch(ObjectExistsException e) {
+                    log.info("Object exists {} in cache", hash);
                 } catch (CacheException ex) {
                     log.warn("Failed to add blob to cache: " + hash, ex);
                 }

@@ -1,5 +1,6 @@
 package org.hashsplit4j.store;
 
+import java.util.Arrays;
 import java.util.List;
 import org.hashsplit4j.api.BlobStore;
 
@@ -19,8 +20,15 @@ public class MultipleBlobStore implements BlobStore {
         this.firstStore = stores.get(0);
     }
 
+    public MultipleBlobStore(BlobStore ... storess) {
+        this.stores = Arrays.asList(storess);
+        this.firstStore = stores.get(0);
+    }
+
+
     @Override
     public void setBlob(String hash, byte[] bytes) {
+            firstStore.setBlob(hash, bytes);
     }
 
     @Override
