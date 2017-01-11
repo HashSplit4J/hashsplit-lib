@@ -1,6 +1,5 @@
 package org.hashsplit4j.store;
 
-import io.milton.common.Path;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,7 +37,6 @@ public class HashsplitHttpTransport {
     private final String server;
     private final int port;
 
-
     private final HttpHost preemptiveAuthTarget;
     private final AuthCache authCache = new BasicAuthCache();
     private final BasicScheme basicAuth = new BasicScheme();
@@ -56,7 +54,7 @@ public class HashsplitHttpTransport {
     }
 
     public byte[] get(String path) {
-        if( !path.startsWith("/")) {
+        if (!path.startsWith("/")) {
             path = "/" + path;
         }
         HttpClientContext localContext = HttpClientContext.create();
@@ -92,9 +90,9 @@ public class HashsplitHttpTransport {
             };
             byte[] responseBody = client.execute(m, responseHandler, localContext);
             return responseBody;
-        } catch(java.net.SocketTimeoutException ex) {
+        } catch (java.net.SocketTimeoutException ex) {
             tm = System.currentTimeMillis() - tm;
-            throw new RuntimeException("Socket timeout: server=" + server + "; port=" + port + "Configured timeout=" + timeout + " actual time=" + tm + "ms" , ex);
+            throw new RuntimeException("Socket timeout: server=" + server + "; port=" + port + "Configured timeout=" + timeout + " actual time=" + tm + "ms", ex);
         } catch (URISyntaxException | IOException ex) {
             throw new RuntimeException("server=" + server + "; port=" + port + "; path=" + path, ex);
         } finally {
@@ -137,9 +135,17 @@ public class HashsplitHttpTransport {
         }
     }
 
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
     @Override
     public String toString() {
-        return "HttpBlobStore: " + server + ":" + port;
+        return "HashsplitHttpTransport: " + server + ":" + port;
     }
 
 }

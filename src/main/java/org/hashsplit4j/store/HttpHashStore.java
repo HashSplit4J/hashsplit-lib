@@ -20,14 +20,17 @@ public class HttpHashStore implements HashStore {
     private final HashsplitHttpTransport httpTransport;
     private final Path fileFanoutPath;
     private final Path chunkFanoutPath;
-    private long gets;
-    private long sets;
-
 
     public HttpHashStore(HashsplitHttpTransport httpTransport, String fileFanoutPath, String chunkFanoutPath) {
         this.httpTransport = httpTransport;
         this.fileFanoutPath = Path.path(fileFanoutPath);
         this.chunkFanoutPath = Path.path(chunkFanoutPath);
+    }
+
+    public HttpHashStore(String server, int port, String username, String password) {
+        this.httpTransport = new HashsplitHttpTransport(server, port, username, password);
+        this.fileFanoutPath = Path.path("/_hashes/fileFanouts");
+        this.chunkFanoutPath = Path.path("/_hashes/chunkFanouts");
     }
 
     public HttpHashStore(HashsplitHttpTransport httpTransport) {
@@ -49,8 +52,8 @@ public class HttpHashStore implements HashStore {
     @Override
     public Fanout getFileFanout(String fileHash) {
         Path destPath = fileFanoutPath.child(fileHash);
-        byte[] arr = httpTransport.get( destPath.toString());
-        if( arr == null ) {
+        byte[] arr = httpTransport.get(destPath.toString());
+        if (arr == null) {
             log.warn("fanour not found {}", destPath);
             return null;
         }
@@ -68,7 +71,7 @@ public class HttpHashStore implements HashStore {
     public Fanout getChunkFanout(String fanoutHash) {
         Path destPath = chunkFanoutPath.child(fanoutHash);
         byte[] arr = httpTransport.get(destPath.toString());
-        if( arr == null ) {
+        if (arr == null) {
             return null;
         }
         ByteArrayInputStream bin = new ByteArrayInputStream(arr);
@@ -89,6 +92,14 @@ public class HttpHashStore implements HashStore {
     @Override
     public boolean hasFile(String fileHash) {
         return getFileFanout(fileHash) != null;
+    }
+
+    public int getHttpTimeout() {
+        return httpTransport.getTimeout();
+    }
+
+    public void setHttpTimeout(int timeout) {
+        httpTransport.setTimeout(timeout);
     }
 
 }
