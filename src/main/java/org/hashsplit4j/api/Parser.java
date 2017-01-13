@@ -68,9 +68,9 @@ public class Parser {
      * @throws IOException
      */
     public String parse(InputStream in, HashStore hashStore, BlobStore blobStore) throws IOException {
-        if (log.isInfoEnabled()) {
-            log.info("parse. inputstream: " + in);
-        }
+//        if (log.isInfoEnabled()) {
+//            log.info("parse. inputstream: " + in);
+//        }
         Rsum rsum = new Rsum(128);
         int numBlobs = 0;
         byte[] arr = new byte[1024];
@@ -158,9 +158,9 @@ public class Parser {
 
         // Now store a fanout for the whole file. The contained hashes locate other fanouts
         String fileCrcVal = toHex(fileCrc);
-        if (log.isInfoEnabled()) {
-            log.info("set file fanout: " + fanoutCrcVal + "  length=" + fileLength + " avg blob size=" + fileLength / numBlobs);
-        }
+//        if (log.isInfoEnabled()) {
+//            log.info("set file fanout: " + fanoutCrcVal + "  length=" + fileLength + " avg blob size=" + fileLength / numBlobs);
+//        }
         hashStore.setFileFanout(fileCrcVal, fanoutHashes, fileLength);
         return fileCrcVal;
     }
