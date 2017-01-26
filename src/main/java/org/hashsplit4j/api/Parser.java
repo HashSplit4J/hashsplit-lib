@@ -124,7 +124,9 @@ public class Parser {
                     if (log.isInfoEnabled()) {
                         log.info("Store blob: " + blobCrcHex + " length=" + blobBytes.length + " hash: " + x + " mask: " + MASK);
                     }
+                    
                     blobStore.setBlob(blobCrcHex, blobBytes);
+                    
                     bout.reset();
                     blobHashes.add(blobCrcHex);
                     blobCrc.reset();

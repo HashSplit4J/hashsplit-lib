@@ -62,7 +62,7 @@ public class JCSCachingHashStore implements HashStore {
         this.hashStore.setChunkFanout(hash, blobHashes, actualContentLength);
         Fanout fanout = new FanoutImpl(blobHashes, actualContentLength);
         try {
-            this.chunkCache.putSafe(hash, fanout);
+            this.chunkCache.put(hash, fanout);
         } catch (CacheException ex) {
             log.warn("Failed to add chunk fanout to cache: " + hash, ex);
         }
@@ -73,7 +73,7 @@ public class JCSCachingHashStore implements HashStore {
         this.hashStore.setFileFanout(hash, fanoutHashes, actualContentLength);
         Fanout fanout = new FanoutImpl(fanoutHashes, actualContentLength);
         try {
-            this.fileCache.putSafe(hash, fanout);
+            this.fileCache.put(hash, fanout);
         } catch (CacheException ex) {
             log.warn("Failed to add file fanout to cache: " + hash, ex);
         }
@@ -87,7 +87,7 @@ public class JCSCachingHashStore implements HashStore {
             if (fanout != null) {
                 fileMisses++;
                 try {
-                    this.fileCache.putSafe(fileHash, fanout);
+                    this.fileCache.put(fileHash, fanout);
                 } catch (CacheException ex) {
                     log.warn("Failed to add file fanout to cache: " + fileHash, ex);
                 }
@@ -107,7 +107,7 @@ public class JCSCachingHashStore implements HashStore {
             if (fanout != null) {
                 chunkMisses++;
                 try {
-                    this.chunkCache.putSafe(fanoutHash, fanout);
+                    this.chunkCache.put(fanoutHash, fanout);
                 } catch (CacheException ex) {
                     log.warn("Failed to add chunk fanout to cache: " + fanoutHash, ex);
                 }
