@@ -51,7 +51,11 @@ public class JCSCachingBlobStore implements BlobStore {
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
-        blobStore.setBlob(hash, bytes);
+        try {
+            blobStore.setBlob(hash, bytes);
+        } catch (Exception ex) {
+            throw new RuntimeException("Error storing blob: " + ex.getMessage(), ex);
+        }
         try {
             if (cache.get(hash) == null) {
                 cache.put(hash, bytes);
