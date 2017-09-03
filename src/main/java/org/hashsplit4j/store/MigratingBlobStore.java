@@ -34,6 +34,7 @@ public class MigratingBlobStore implements BlobStore {
             return;
         } catch (Exception ex) {
             log.warn("Failed to store blob to newBlobStore {} with message {}", newBlobStore, ex.getMessage(), ex);
+            enqueue(hash, bytes);
         }
 
         try {

@@ -6,6 +6,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.hashsplit4j.api.Fanout;
+import org.hashsplit4j.api.FanoutImpl;
 import org.hashsplit4j.api.HashFanoutImpl;
 import org.hashsplit4j.api.HashStore;
 import org.hashsplit4j.runnables.FanoutQueueRunnable;
@@ -25,7 +26,7 @@ public class MigratingHashStore implements HashStore {
     private final HashStore oldHashStore;
     private final ExecutorService exService;
     private final BlockingQueue<HashFanoutImpl> fileQueue = new ArrayBlockingQueue<>(1000);
-    private final BlockingQueue<HashFanoutImpl> ChunkQueue = new ArrayBlockingQueue<>(1000);
+    private final BlockingQueue<HashFanoutImpl> chunkQueue = new ArrayBlockingQueue<>(1000);
 
     public MigratingHashStore(HashStore newHashStore, HashStore oldHashStore) {
         this.newHashStore = newHashStore;
@@ -35,7 +36,7 @@ public class MigratingHashStore implements HashStore {
         FanoutQueueRunnable fqr = new FanoutQueueRunnable(this.newHashStore, fileQueue, FanoutQueueRunnable.FanoutType.FILE);
         exService.submit(fqr);
 
-        FanoutQueueRunnable cqr = new FanoutQueueRunnable(this.newHashStore, ChunkQueue, FanoutQueueRunnable.FanoutType.CHUNK);
+        FanoutQueueRunnable cqr = new FanoutQueueRunnable(this.newHashStore, chunkQueue, FanoutQueueRunnable.FanoutType.CHUNK);
         exService.submit(cqr);
     }
 
@@ -45,6 +46,8 @@ public class MigratingHashStore implements HashStore {
             newHashStore.setFileFanout(hash, fanoutHashes, actualContentLength);
         } catch (Exception ex) {
             log.warn("Failed to store file fanout to newHashStore {} with message {}", newHashStore, ex.getMessage(), ex);
+            Fanout fanout = new FanoutImpl(fanoutHashes, actualContentLength);
+            enqueueFile(hash, fanout);
         }
     }
 
@@ -54,6 +57,8 @@ public class MigratingHashStore implements HashStore {
             newHashStore.setChunkFanout(hash, blobHashes, actualContentLength);
         } catch (Exception ex) {
             log.warn("Failed to store chunk fanout to newHashStore {} with message {}", newHashStore, ex.getMessage(), ex);
+            Fanout fanout = new FanoutImpl(blobHashes, actualContentLength);
+            enqueueChunk(hash, fanout);
         }
     }
 
@@ -132,6 +137,6 @@ public class MigratingHashStore implements HashStore {
     private void enqueueChunk(String fanoutHash, Fanout fanout) {
         log.info("Enqueuing chunk fanout={}", fanoutHash);
         HashFanoutImpl f = new HashFanoutImpl(fanoutHash, fanout.getHashes(), fanout.getActualContentLength());
-        ChunkQueue.offer(f);
+        chunkQueue.offer(f);
     }
 }
