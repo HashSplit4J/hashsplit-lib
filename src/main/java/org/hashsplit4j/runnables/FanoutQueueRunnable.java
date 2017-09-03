@@ -31,7 +31,7 @@ public class FanoutQueueRunnable implements Runnable {
 
     @Override
     public void run() {
-        HashFanoutImpl fanout;
+        HashFanoutImpl fanout = null;
         while (true) {
             try {
                 fanout = this.queue.take();
@@ -47,7 +47,10 @@ public class FanoutQueueRunnable implements Runnable {
                     log.error("An InterruptedException was thrown with queue {}", queue, ex);
                     throw new RuntimeException(ex);
                 } else {
-                    log.error("Exception inserting file fanout into store:{}", hashstore, ex);
+                    log.error("Exception inserting file fanout into store:{} | Msg: {}", hashstore, ex.getMessage(), ex);
+                    if (fanout != null) {
+                        queue.offer(fanout);
+                    }
                 }
             }
         }

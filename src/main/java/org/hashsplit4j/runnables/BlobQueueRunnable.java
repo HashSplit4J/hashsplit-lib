@@ -39,7 +39,7 @@ public class BlobQueueRunnable implements Runnable {
 
     @Override
     public void run() {
-        BlobImpl blob;
+        BlobImpl blob = null;
         while (true) {
             try {
                 blob = queue.take();
@@ -51,7 +51,10 @@ public class BlobQueueRunnable implements Runnable {
                     log.error("An InterruptedException was thrown with queue {}", queue, ex);
                     throw new RuntimeException(ex);
                 } else {
-                    log.error("Exception inserting blob into store:{}", blobStore, ex);
+                    log.error("Exception inserting blob into store:{} | Msg: {}", blobStore, ex.getMessage(), ex);
+                    if (blob != null) {
+                        queue.offer(blob);
+                    }
                 }
             }
         }
