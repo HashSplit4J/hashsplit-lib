@@ -9,13 +9,14 @@
     <name>hashsplit4j-lib</name>
     <distributionManagement>
         <repository>
-            <id>ettrema-repo</id>
-            <url>http://milton.io/maven</url>
+            <id>bintray-kademi-Kademi</id>
+            <name>bintray-kademi-Kademi</name>
+            <url>https://api.bintray.com/maven/kademi/Kademi/kademi/;publish=1</url>
         </repository>
         <snapshotRepository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>ettrema-repo</id>
-            <url>http://milton.io/maven</url>
+            <id>bintray-kademi-Kademi</id>
+            <name>bintray-kademi-Kademi</name>
+            <url>https://api.bintray.com/maven/kademi/Kademi/kademi/;publish=1</url>
         </snapshotRepository>
     </distributionManagement>
     <developers>
