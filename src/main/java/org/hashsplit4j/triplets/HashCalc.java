@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,9 +19,10 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
+import org.bouncycastle.crypto.Digest;
+import org.hashsplit4j.api.Parser;
 import org.hashsplit4j.store.NullBlobStore;
 import org.hashsplit4j.store.NullHashStore;
-import org.hashsplit4j.api.Parser;
 
 /**
  *
@@ -39,10 +39,10 @@ public class HashCalc {
 
     /**
      * Calculates the directory hash of the given members
-     * 
+     *
      * @param childDirEntries
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public String calcHash(Iterable<? extends ITriplet> childDirEntries) throws IOException {
         OutputStream nulOut = new NullOutputStream();
@@ -50,16 +50,17 @@ public class HashCalc {
     }
 
     /**
-     * Calculates the hash of the given triplets (ie the directory hash with the given members),
-     * and writes the standard format for the triplets to the given output stream
-     * 
+     * Calculates the hash of the given triplets (ie the directory hash with the
+     * given members), and writes the standard format for the triplets to the
+     * given output stream
+     *
      * @param childDirEntries
      * @param out
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public String calcHash(Iterable<? extends ITriplet> childDirEntries, OutputStream out) throws IOException {
-        MessageDigest crypto = Parser.getCrypt();
+        Digest crypto = Parser.getCrypt();
         for (ITriplet r : childDirEntries) {
             String line = toHashableText(r.getName(), r.getHash(), r.getType());
             appendLine(line, crypto);
@@ -83,11 +84,13 @@ public class HashCalc {
         return line;
     }
 
-    public static void appendLine(String line, MessageDigest cout) {
+    public static void appendLine(String line, Digest cout) {
         if (line == null) {
             return;
         }
-        cout.update(line.getBytes());
+        for (byte b : line.getBytes()) {
+            cout.update(b);
+        }
 
     }
 
@@ -134,10 +137,10 @@ public class HashCalc {
             IOUtils.closeQuietly(fin);
         }
     }
-    
+
     public void verifyHash(InputStream fin, String expectedHash) throws IOException {
         BufferedInputStream bufIn = null;
-        try  {
+        try {
             bufIn = new BufferedInputStream(fin);
             Parser parser = new Parser();
             NullBlobStore blobStore = new NullBlobStore();
@@ -149,27 +152,27 @@ public class HashCalc {
         } finally {
             IOUtils.closeQuietly(bufIn);
         }
-    }    
+    }
 
     public void sort(List<? extends ITriplet> list) {
         Collections.sort(list, COMPARATOR);
     }
 
     /**
-     * Just reads a hex formatted SHA1 hash from the inputstream. Assumes that the
-     * string is the first line
-     * 
+     * Just reads a hex formatted SHA1 hash from the inputstream. Assumes that
+     * the string is the first line
+     *
      * @param in
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public String readHash(InputStream in) throws IOException {
         InputStreamReader r = new InputStreamReader(in);
         BufferedReader br = new BufferedReader(r);
         String hash = br.readLine();
         return hash;
-    }    
-    
+    }
+
     public void writeHash(String hash, OutputStream out) throws IOException {
         OutputStreamWriter w = new OutputStreamWriter(out);
         BufferedWriter bw = new BufferedWriter(w);
@@ -179,7 +182,7 @@ public class HashCalc {
         w.flush();
         out.flush();
     }
-    
+
     public static class ITripletComparator implements Comparator<ITriplet> {
 
         @Override

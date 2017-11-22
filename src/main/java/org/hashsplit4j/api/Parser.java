@@ -1,12 +1,16 @@
 package org.hashsplit4j.api;
 
 import java.io.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +58,17 @@ public class Parser {
         }
     }
 
+    private final String algorithmName;
     private boolean cancelled;
     private long numBytes;
+
+    public Parser() {
+        this.algorithmName = "SHA1";
+    }
+
+    public Parser(String algorithmName) {
+        this.algorithmName = algorithmName;
+    }
 
     /**
      * Returns a hex enccoded SHA1 hash of the whole file. This can be used to
@@ -77,9 +90,10 @@ public class Parser {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
         List<String> blobHashes = new ArrayList<>();
-        MessageDigest blobCrc = getCrypt();
-        MessageDigest fanoutCrc = getCrypt();
-        MessageDigest fileCrc = getCrypt();
+
+        Digest blobCrc = getCrypt(algorithmName);
+        Digest fanoutCrc = getCrypt(algorithmName);
+        Digest fileCrc = getCrypt(algorithmName);
 
         long fanoutLength = 0;
         long fileLength = 0;
@@ -124,9 +138,9 @@ public class Parser {
                     if (log.isInfoEnabled()) {
                         log.info("Store blob: " + blobCrcHex + " length=" + blobBytes.length + " hash: " + x + " mask: " + MASK);
                     }
-                    
+
                     blobStore.setBlob(blobCrcHex, blobBytes);
-                    
+
                     bout.reset();
                     blobHashes.add(blobCrcHex);
                     blobCrc.reset();
@@ -167,19 +181,47 @@ public class Parser {
         return fileCrcVal;
     }
 
-    public static MessageDigest getCrypt() {
-        MessageDigest cript;
-        try {
-            cript = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException(ex);
+    public static Digest getCrypt(String algorithmName) {
+        if (StringUtils.isEmpty(algorithmName)) {
+            return new SHA1Digest();
         }
-        return cript;
+
+        algorithmName = StringUtils.trim(StringUtils.upperCase(algorithmName));
+        algorithmName = algorithmName.replaceAll("[^A-Za-z0-9]", "");
+
+        switch (algorithmName) {
+            case "SHA256":
+                return new SHA256Digest();
+            case "SHA384":
+                return new SHA384Digest();
+            case "SHA512":
+                return new SHA512Digest();
+            default:
+                return new SHA1Digest();
+        }
     }
 
-    public static String toHex(MessageDigest crypt) {
-        String hash = DigestUtils.sha1Hex(crypt.digest());
-        return hash;
+    public static Digest getCrypt() {
+        return getCrypt(null);
+    }
+
+    public static String toHex(Digest crypt) {
+        byte[] result = new byte[crypt.getDigestSize()];
+        crypt.doFinal(result, 0);
+
+        String an = crypt.getAlgorithmName();
+        switch (an) {
+            case "SHA-1":
+                return DigestUtils.sha1Hex(result);
+            case "SHA-256":
+                return DigestUtils.sha256Hex(result);
+            case "SHA-384":
+                return DigestUtils.sha384Hex(result);
+            case "SHA-512":
+                return DigestUtils.sha512Hex(result);
+            default:
+                return DigestUtils.sha1Hex(result);
+        }
     }
 
     public boolean isCancelled() {
