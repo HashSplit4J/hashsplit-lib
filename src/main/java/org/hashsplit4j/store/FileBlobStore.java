@@ -1,10 +1,9 @@
 package org.hashsplit4j.store;
 
 import java.io.*;
-import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.CRC32;
+import org.bouncycastle.crypto.Digest;
 import org.hashsplit4j.api.BlobStore;
 import org.hashsplit4j.api.Parser;
 
@@ -38,7 +37,7 @@ public class FileBlobStore implements BlobStore {
 
     private static void readBytes(RandomAccessFile raf, OutputStream bout, int length, String expectedHash) throws IOException {
         byte[] arr = new byte[length];
-        MessageDigest blobCrc = Parser.getCrypt();
+        Digest blobCrc = Parser.getCrypt();
         int s = raf.read(arr, 0, length);
         while (s > 0) {
             blobCrc.update(arr, 0, s);

@@ -18,25 +18,20 @@ public class HttpBlobStore implements BlobStore {
     private long gets;
     private long sets;
 
-
-
     public HttpBlobStore(String server, int port, String rootPath, String username, String password) {
         httpTransport = new HashsplitHttpTransport(server, port, username, password);
-//        if( !rootPath.startsWith("/")) {
-//            throw new IllegalArgumentException("Root path must be absolute,ie start with a slash: " + rootPath);
-//        }
         this.basePath = Path.path(rootPath);
     }
 
     public HttpBlobStore(HashsplitHttpTransport httpTransport, Path rootPath) {
         this.httpTransport = httpTransport;
-//        if( rootPath.isRelative() ) {
-//            throw new IllegalArgumentException("Root path must be absolute,ie start with a slash: " + rootPath);
-//        }
         this.basePath = rootPath;
     }
 
-
+    public HttpBlobStore(HashsplitHttpTransport httpTransport) {
+        this.httpTransport = httpTransport;
+        this.basePath = Path.path("/_hashes/blobs");
+    }
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
@@ -59,7 +54,6 @@ public class HttpBlobStore implements BlobStore {
         return httpTransport.get(destPath.toString());
     }
 
-
     /**
      * Base url to PUT to, hash will be appended. Must end with a slash
      *
@@ -73,6 +67,14 @@ public class HttpBlobStore implements BlobStore {
 
     public void setBaseUrl(String baseUrl) {
         this.basePath = Path.path(baseUrl);
+    }
+
+    public int getHttpTimeout() {
+        return httpTransport.getTimeout();
+    }
+
+    public void setHttpTimeout(int timeout) {
+        httpTransport.setTimeout(timeout);
     }
 
     public long getGets() {

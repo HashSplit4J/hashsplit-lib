@@ -34,6 +34,7 @@ public class MigratingBlobStore implements BlobStore {
             return;
         } catch (Exception ex) {
             log.warn("Failed to store blob to newBlobStore {} with message {}", newBlobStore, ex.getMessage(), ex);
+            enqueue(hash, bytes);
         }
 
         try {
@@ -46,11 +47,11 @@ public class MigratingBlobStore implements BlobStore {
 
     @Override
     public byte[] getBlob(String hash) {
-        log.info("getBlob={}", hash);
+        log.trace("getBlob={}", hash);
 
         try {
             if (newBlobStore.hasBlob(hash)) {
-                log.info("got blob from={}", newBlobStore);
+                log.trace("got blob from={}", newBlobStore);
                 return newBlobStore.getBlob(hash);
             } else {
                 log.info("Could not find blob {} on newBlobStore {}", hash, newBlobStore);
@@ -61,7 +62,7 @@ public class MigratingBlobStore implements BlobStore {
 
         try {
             if (oldBlobStore.hasBlob(hash)) {
-                log.info("got blob from={}", oldBlobStore);
+                log.trace("got blob from={}", oldBlobStore);
                 byte[] data = oldBlobStore.getBlob(hash);
                 enqueue(hash, data);
                 return data;
@@ -86,7 +87,7 @@ public class MigratingBlobStore implements BlobStore {
     }
 
     private void enqueue(String hash, byte[] bytes) {
-        log.info("Enqueuing blob={}", hash);
+        log.trace("Enqueuing blob={}", hash);
         queue.addBlob(hash, bytes);
     }
 }
