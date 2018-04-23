@@ -5,6 +5,8 @@ import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.hashsplit4j.api.BlobStore;
 import org.hashsplit4j.event.NewFileBlobEvent;
@@ -36,7 +38,7 @@ public class FileSystemBlobStore implements BlobStore {
     public void setBlob(String hash, byte[] bytes) {
         setBlob(hash, bytes, true);
     }
-    
+
     public void setBlob(String hash, byte[] bytes, boolean enableEvent) {
         File blob = FsHashUtils.toFile(root, hash);
         if (blob.exists()) {
@@ -45,8 +47,17 @@ public class FileSystemBlobStore implements BlobStore {
         }
         File dir = blob.getParentFile();
         if (!dir.exists()) {
+            log.info("Creating dir: {}", dir.getAbsolutePath());
             if (!dir.mkdirs()) {
-                throw new RuntimeException("Couldnt create blob directory: " + dir.getAbsolutePath());
+                // Maybe another thread created it?
+                try {
+                    Thread.sleep(20); // yield, so other thread can finish
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException("Couldnt create blob directory: " + dir.getAbsolutePath(), ex);
+                }
+                if( !dir.exists()) {
+                    throw new RuntimeException("Couldnt create blob directory: " + dir.getAbsolutePath());
+                }
             }
         }
         FileOutputStream fout = null;
