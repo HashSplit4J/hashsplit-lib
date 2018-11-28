@@ -75,9 +75,7 @@ public class JCSCachingBlobStore implements BlobStore {
                 log.info("JCSCachingBlobStore cache miss: hits={} misses={}", hits, misses);
                 misses++;
                 try {
-                    if (cache.get(hash) == null) {
-                        cache.put(hash, arr);
-                    }
+                    cache.putSafe(hash, arr);
                 } catch(ObjectExistsException e) {
                     log.info("Object exists {} in cache", hash);
                 } catch (CacheException ex) {
