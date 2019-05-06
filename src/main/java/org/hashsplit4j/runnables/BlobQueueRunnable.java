@@ -29,7 +29,7 @@ public class BlobQueueRunnable implements Runnable {
      *
      * @param hash
      * @param bytes
-     * @return
+     * @return true upon success and false if no space is currently available
      */
     public boolean addBlob(String hash, byte[] bytes) {
         log.info("Enqueuing blob={}", hash);

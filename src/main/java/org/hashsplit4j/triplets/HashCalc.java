@@ -41,7 +41,7 @@ public class HashCalc {
      * Calculates the directory hash of the given members
      *
      * @param childDirEntries
-     * @return
+     * @return calculated hash
      * @throws IOException
      */
     public String calcHash(Iterable<? extends ITriplet> childDirEntries) throws IOException {
@@ -56,7 +56,7 @@ public class HashCalc {
      *
      * @param childDirEntries
      * @param out
-     * @return
+     * @return calculated hash
      * @throws IOException
      */
     public String calcHash(Iterable<? extends ITriplet> childDirEntries, OutputStream out) throws IOException {
@@ -77,7 +77,7 @@ public class HashCalc {
      * hashed value of its members if a directory (ie calculated with this
      * method)
      * @param type - "f" = file, "d" = directory
-     * @return
+     * @return Hashable Text 
      */
     public static String toHashableText(String name, String crc, String type) {
         String line = name + ":" + crc + ":" + type + '\n';
@@ -163,7 +163,7 @@ public class HashCalc {
      * the string is the first line
      *
      * @param in
-     * @return
+     * @return hash
      * @throws IOException
      */
     public String readHash(InputStream in) throws IOException {
