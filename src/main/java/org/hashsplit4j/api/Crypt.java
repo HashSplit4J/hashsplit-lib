@@ -24,8 +24,8 @@ public class Crypt {
     /**
      * Calculates the directory hash of the given string of contents
      *
-     * @param content
-     * @return
+     * @param text
+     * @return HEX string
      */
     public static String toHexFromText(String text) {
         if (text == null) {
@@ -38,8 +38,8 @@ public class Crypt {
     /**
      * Calculates the directory hash of the given bytes of contents
      *
-     * @param content
-     * @return
+     * @param bytes
+     * @return HEX string
      */
     public static String toHexFromByte(byte[] bytes) {
         if (bytes == null) {
@@ -57,8 +57,8 @@ public class Crypt {
      * Calculates the hash of the given childrens (ie the directory hash with
      * the given childrens)
      *
-     * @param children
-     * @return
+     * @param childrens
+     * @return HEX string
      */
     public static String toHexFromBlob(List<HashGroup> childrens) {
         Digest crypto = Parser.getCrypt();
@@ -77,7 +77,7 @@ public class Crypt {
      * with the given blobs)
      *
      * @param childrens
-     * @return
+     * @return HEX string
      */
     public static String toHexFromHash(List<String> childrens) {
         Digest crypto = Parser.getCrypt();

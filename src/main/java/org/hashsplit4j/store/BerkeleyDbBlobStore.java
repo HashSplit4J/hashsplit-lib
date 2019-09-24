@@ -175,7 +175,7 @@ public class BerkeleyDbBlobStore implements BlobStore, ReceivingBlobStore {
      * VALID	| |	ccc |	xxxxxx	|	VALID	| |	xyz |	xxxxxx	|	VALID	| |	abc |	xxxxxx
      * |	VALID	| +-----------+---------------+---------------+
      *
-     * @return
+     * @return list of HashGroup
      */
     public List<HashGroup> getRootGroups() {
         List<HashGroup> groups = new ArrayList<>();
@@ -198,7 +198,7 @@ public class BerkeleyDbBlobStore implements BlobStore, ReceivingBlobStore {
      * Get the hash groups for the given root group's name
      *
      * @param parent
-     * @return
+     * @return list of HashGroup
      */
     public List<HashGroup> getSubGroups(String parent) {
         List<HashGroup> groups = new ArrayList<>();
@@ -221,7 +221,7 @@ public class BerkeleyDbBlobStore implements BlobStore, ReceivingBlobStore {
      * Get the blob hashes for the sub group's name
      *
      * @param subGroupName
-     * @return
+     * @return a list of blob hashes
      */
     public List<String> getBlobHashes(String subGroupName) {
         List<String> hashes = new ArrayList<>();

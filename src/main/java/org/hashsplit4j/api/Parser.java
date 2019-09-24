@@ -77,7 +77,7 @@ public class Parser {
      * @param in
      * @param hashStore
      * @param blobStore
-     * @return
+     * @return HEX encoded hash string
      * @throws IOException
      */
     public String parse(InputStream in, HashStore hashStore, BlobStore blobStore) throws IOException {

@@ -24,7 +24,7 @@ public class FileBlobStore implements BlobStore {
      * @param offset
      * @param length
      * @param expectedHash
-     * @return
+     * @return byte[] read from the RandomAccessFile
      * @throws IOException 
      */
     public static byte[] readBytes(RandomAccessFile raf, long offset, int length, String expectedHash) throws IOException {

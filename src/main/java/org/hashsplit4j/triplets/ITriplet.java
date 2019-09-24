@@ -22,21 +22,21 @@ public interface ITriplet {
     /**
      * Hex representation of the 160 bit SHA1 hash for this item
      * 
-     * @return 
+     * @return hash
      */
     String getHash();
 
     /**
      * The local name of the item within its directory
      * 
-     * @return 
+     * @return file name
      */
     String getName();
 
     /**
      * The item type, f=file, d=directory
      * 
-     * @return 
+     * @return type
      */
     String getType();
     

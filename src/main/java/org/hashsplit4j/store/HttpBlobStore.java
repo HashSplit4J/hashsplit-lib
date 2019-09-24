@@ -59,7 +59,7 @@ public class HttpBlobStore implements BlobStore {
      *
      * Eg http://myserver/blobs/
      *
-     * @return
+     * @return configured baseUrl
      */
     public String getBaseUrl() {
         return basePath.toString();
