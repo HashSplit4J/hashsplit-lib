@@ -13,9 +13,12 @@ import org.slf4j.LoggerFactory;
 public class BlobQueueRunnable implements Runnable {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(BlobQueueRunnable.class);
+    public static final int MAX_ERRORS = 100;   // if too many errors then dont try to save any more
 
     private final BlobStore blobStore;
     private final BlockingQueue<BlobImpl> queue;
+
+    private int errors;
 
     public BlobQueueRunnable(final BlobStore blobStore, final int queueCapacity) {
         this.blobStore = blobStore;
@@ -33,8 +36,13 @@ public class BlobQueueRunnable implements Runnable {
      */
     public boolean addBlob(String hash, byte[] bytes) {
         log.info("Enqueuing blob={}", hash);
-        BlobImpl blob = new BlobImpl(hash, bytes);
-        return this.queue.offer(blob);
+        if (errors > MAX_ERRORS) {
+            log.warn("addBlob: Too many errors, will not try to save to MCS");
+            return false;
+        } else {
+            BlobImpl blob = new BlobImpl(hash, bytes);
+            return this.queue.offer(blob);
+        }
     }
 
     @Override
@@ -47,13 +55,16 @@ public class BlobQueueRunnable implements Runnable {
                     blobStore.setBlob(blob.getHash(), blob.getBytes());
                 }
             } catch (Exception ex) {
+                errors++;
                 if (ex instanceof InterruptedException) {
                     log.error("An InterruptedException was thrown with queue {}", queue, ex);
                     throw new RuntimeException(ex);
                 } else {
                     log.error("Exception inserting blob into store:{} | Msg: {}", blobStore, ex.getMessage(), ex);
                     if (blob != null) {
-                        queue.offer(blob);
+                        if( errors < MAX_ERRORS ) {
+                            queue.offer(blob);
+                        }
                     }
                 }
             }
