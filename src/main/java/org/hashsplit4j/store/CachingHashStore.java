@@ -23,14 +23,14 @@ public class CachingHashStore implements HashStore {
                 .build();
         fileCache = new ConcurrentLinkedHashMap.Builder()
                 .maximumWeightedCapacity(capacity)
-                .build();        
+                .build();
     }
 
     @Override
     public void setChunkFanout(String hash, List<String> blobHashes, long actualContentLength) {
         hashStore.setChunkFanout(hash, blobHashes, actualContentLength);
         FanoutImpl i = new FanoutImpl(blobHashes, actualContentLength);
-        chunkCache.putIfAbsent(hash, i);         
+        chunkCache.putIfAbsent(hash, i);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class CachingHashStore implements HashStore {
     public void setFileFanout(String fileHash, List<String> fanoutHashes, long actualContentLength) {
         hashStore.setFileFanout(fileHash, fanoutHashes, actualContentLength);
         FanoutImpl i = new FanoutImpl(fanoutHashes, actualContentLength);
-        fileCache.putIfAbsent(fileHash, i);        
+        fileCache.putIfAbsent(fileHash, i);
     }
 
     @Override
@@ -86,4 +86,11 @@ public class CachingHashStore implements HashStore {
         fileCache.putIfAbsent(fileHash, i);
         return i;
     }
+
+    @Override
+    public String toString() {
+        return "CachingHashStore(" + this.hashStore + ")";
+    }
+
+
 }
