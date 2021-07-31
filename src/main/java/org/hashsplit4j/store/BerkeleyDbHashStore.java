@@ -29,6 +29,8 @@ public class BerkeleyDbHashStore implements HashStore {
 
     private final Logger log = LoggerFactory.getLogger(BerkeleyDbHashStore.class);
 
+    private final String filesDir;
+    private final String chunksDir;
     private final int nPrefGroup;
     private final int nPrefSubGroup;
 
@@ -51,6 +53,8 @@ public class BerkeleyDbHashStore implements HashStore {
     private final ScheduledFuture<?> taskHandle;
 
     public BerkeleyDbHashStore(File fileEnvHome, File chunkEnvHome, int nPrefGroup, int nPrefSubGroup) {
+        this.filesDir = fileEnvHome.getAbsolutePath();
+        this.chunksDir = chunkEnvHome.getAbsolutePath();
         this.nPrefGroup = nPrefGroup;
         this.nPrefSubGroup = nPrefSubGroup;
 
@@ -65,15 +69,15 @@ public class BerkeleyDbHashStore implements HashStore {
 
         this.taskHandle = scheduler.scheduleAtFixedRate(
                 new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            writeToDisk();
-                        } catch (Exception ex) {
-                            log.warn("Error writing db changes to disk", ex);
-                        }
-                    }
-                }, 0, 15, TimeUnit.SECONDS);
+            @Override
+            public void run() {
+                try {
+                    writeToDisk();
+                } catch (Exception ex) {
+                    log.warn("Error writing db changes to disk", ex);
+                }
+            }
+        }, 0, 15, TimeUnit.SECONDS);
     }
 
     @Override
@@ -81,12 +85,13 @@ public class BerkeleyDbHashStore implements HashStore {
         if (hash == null || blobHashes == null) {
             throw new RuntimeException("hash and blobHashes can not be null for store chunk fanout function");
         }
+        log.info("setChunkFanout: hash={}", hash);
 
         String group = hash.substring(0, nPrefGroup);
         String subGroup = hash.substring(0, nPrefSubGroup);
 
         chunkAccessor.addToHashByIndex(new Hash(hash, group, subGroup, blobHashes, actualContentLength));
-        
+
         lastCommit = new Date();
         doCommit = true;
         commitCount++;
@@ -97,12 +102,13 @@ public class BerkeleyDbHashStore implements HashStore {
         if (hash == null || fanoutHashes == null) {
             throw new RuntimeException("hash and fanoutHashes can not be null for store file fanout function");
         }
+        log.info("setFileFanout: hash={}", hash);
 
         String group = hash.substring(0, nPrefGroup);
         String subGroup = hash.substring(0, nPrefSubGroup);
 
         fileAccessor.addToHashByIndex(new Hash(hash, group, subGroup, fanoutHashes, actualContentLength));
-        
+
         lastCommit = new Date();
         doCommit = true;
         commitCount++;
@@ -141,11 +147,25 @@ public class BerkeleyDbHashStore implements HashStore {
     private void writeToDisk() {
         Date now = new Date();
         if ((lastCommit == null || (now.getTime() - lastCommit.getTime()) > 5000 || commitCount > 10000) && doCommit) {
+            log.info("writeToDisk: commitCount={}", commitCount);
             this.dbChunkEnv.getEnv().sync();
             this.dbFileEnv.getEnv().sync();
             doCommit = false;
             commitCount = 0;
         }
+    }
+
+    public String getFilesDir() {
+        return filesDir;
+    }
+
+    public String getChunksDir() {
+        return chunksDir;
+    }
+
+    @Override
+    public String toString() {
+        return "BerkeleyDbHashStore(filesDir=" + filesDir + ", commitCount=" + commitCount + ")";
     }
 
 }
