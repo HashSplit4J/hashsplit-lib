@@ -23,17 +23,17 @@ public class SimpleFileDbTest {
 
         SimpleFileDb db = new SimpleFileDb(keysFile, valuesFile);
         byte[] arr1 = "Hello world!!!!!".getBytes();
-        db.save("hello1", arr1);
+        db.put("hello1", arr1);
 
-        byte[] arr2 = db.load("hello1");
+        byte[] arr2 = db.get("hello1");
         Assert.assertEquals(arr1.length, arr2.length);
 
-        db.save("hello2", "Another string 2".getBytes());
-        db.save("hello3", "Another string 3".getBytes());
+        db.put("hello2", "Another string 2".getBytes());
+        db.put("hello3", "Another string 3".getBytes());
 
 
         SimpleFileDb db2 = new SimpleFileDb(keysFile, valuesFile);
-        arr2 = db.load("hello1");
+        arr2 = db.get("hello1");
         Assert.assertEquals(arr1.length, arr2.length);
 
 

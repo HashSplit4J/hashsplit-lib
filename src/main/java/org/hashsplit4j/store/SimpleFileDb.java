@@ -45,8 +45,18 @@ public class SimpleFileDb {
             }
         }
     }
+    
+    public int size() {
+        return mapOfItems.size();
+    }
 
-    public void save(String key, byte[] val) throws FileNotFoundException, IOException {
+    Map<String, DbItem> getMapOfItems() {
+        return mapOfItems;
+    }
+    
+    
+
+    public DbItem put(String key, byte[] val) throws FileNotFoundException, IOException {
         if (mapOfItems.containsKey(key)) {
             throw new RuntimeException("Key " + key + " is already present");
         }
@@ -72,14 +82,20 @@ public class SimpleFileDb {
         }
 
         mapOfItems.put(key, dbItem);
+        
+        return dbItem;
 
     }
 
-    public byte[] load(String key) throws FileNotFoundException, IOException {
+    public byte[] get(String key) throws FileNotFoundException, IOException {
         DbItem item = mapOfItems.get(key);
         if (item == null) {
             return null;
         }
+        return get(item);
+    }
+    
+    public byte[] get(DbItem item) throws FileNotFoundException, IOException {
         RandomAccessFile raf = new RandomAccessFile(keysFile, "r");
         try (FileChannel chan = raf.getChannel()) {
             int size = (int) (item.finish - item.start);
@@ -104,7 +120,7 @@ public class SimpleFileDb {
         }
     }
 
-    private class DbItem {
+    public class DbItem {
 
         private final long start;
         private final long finish;
@@ -112,6 +128,10 @@ public class SimpleFileDb {
         public DbItem(long start, long finish) {
             this.start = start;
             this.finish = finish;
+        }
+
+        byte[] data() throws IOException {
+            return SimpleFileDb.this.get(this);
         }
     }
 }
