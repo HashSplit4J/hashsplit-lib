@@ -16,11 +16,11 @@ import org.hashsplit4j.api.BlobStore;
 public class SimpleFileDbBlobStore implements BlobStore{
     private final List<SimpleFileDb> dbs = new ArrayList<>();
     private final Map<String, SimpleFileDb.DbItem> mapOfItems = new HashMap<>();
-    
+
     public void addDb(SimpleFileDb db) {
-        mapOfItems.putAll(db.getMapOfItems());        
+        mapOfItems.putAll(db.getMapOfItems());
     }
-    
+
     public int getNumDbs() {
         return dbs.size();
     }
@@ -28,7 +28,7 @@ public class SimpleFileDbBlobStore implements BlobStore{
     public int size() {
         return mapOfItems.size();
     }
-    
+
     @Override
     public void setBlob(String hash, byte[] bytes) {
         throw new UnsupportedOperationException("Not supported. Please add directly to an underlying SimpleFileDb");
@@ -48,6 +48,4 @@ public class SimpleFileDbBlobStore implements BlobStore{
     public boolean hasBlob(String hash) {
         return mapOfItems.containsKey(hash);
     }
-    
-    
 }
