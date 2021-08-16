@@ -35,17 +35,19 @@ public class SimpleFileDb {
     }
 
     public void init() throws FileNotFoundException, IOException {
-        try (FileInputStream fin = new FileInputStream(keysFile)) {
-            InputStreamReader r1 = new InputStreamReader(fin);
-            BufferedReader reader = new BufferedReader(r1);
-            String line = reader.readLine();
-            while (line != null) {
-                parseAndAdd(line);
-                line = reader.readLine();
+        if (keysFile.exists()) {
+            try (FileInputStream fin = new FileInputStream(keysFile)) {
+                InputStreamReader r1 = new InputStreamReader(fin);
+                BufferedReader reader = new BufferedReader(r1);
+                String line = reader.readLine();
+                while (line != null) {
+                    parseAndAdd(line);
+                    line = reader.readLine();
+                }
             }
         }
     }
-    
+
     public int size() {
         return mapOfItems.size();
     }
@@ -53,8 +55,6 @@ public class SimpleFileDb {
     Map<String, DbItem> getMapOfItems() {
         return mapOfItems;
     }
-    
-    
 
     public DbItem put(String key, byte[] val) throws FileNotFoundException, IOException {
         if (mapOfItems.containsKey(key)) {
@@ -82,7 +82,7 @@ public class SimpleFileDb {
         }
 
         mapOfItems.put(key, dbItem);
-        
+
         return dbItem;
 
     }
@@ -94,7 +94,7 @@ public class SimpleFileDb {
         }
         return get(item);
     }
-    
+
     public byte[] get(DbItem item) throws FileNotFoundException, IOException {
         RandomAccessFile raf = new RandomAccessFile(keysFile, "r");
         try (FileChannel chan = raf.getChannel()) {
