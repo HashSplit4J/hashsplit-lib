@@ -9,15 +9,10 @@
     <name>hashsplit4j-lib</name>
     <distributionManagement>
         <repository>
-            <id>bintray-kademi-Kademi</id>
-            <name>bintray-kademi-Kademi</name>
-            <url>https://api.bintray.com/maven/kademi/Kademi/kademi/;publish=1</url>
+            <id>central</id>
+            <name>a0glkgfeusb7f-artifactory-primary-0-releases</name>
+            <url>https://kademi.jfrog.io/artifactory/kademi-libs-release-local</url>
         </repository>
-        <snapshotRepository>
-            <id>bintray-kademi-Kademi</id>
-            <name>bintray-kademi-Kademi</name>
-            <url>https://api.bintray.com/maven/kademi/Kademi/kademi/;publish=1</url>
-        </snapshotRepository>
     </distributionManagement>
     <developers>
         <developer>
