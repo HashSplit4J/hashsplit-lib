@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import org.hashsplit4j.api.Fanout;
 import org.hashsplit4j.api.HashStore;
+import static org.hashsplit4j.store.SimpleFileDbBlobStore.incrementLong;
 import org.hashsplit4j.utils.StringFanoutUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,9 @@ public class SimpleFileDbHashStore implements HashStore {
     private final List<SimpleFileDb> dbs = new ArrayList<>();
     private final Set<String> dbNames = new HashSet<>();
     private final Map<String, SimpleFileDb.DbItem> mapOfItems = new HashMap<>();
+
+    private long hits;
+    private long misses;
 
     public SimpleFileDbHashStore(HashStore wrapped) {
         this.wrapped = wrapped;
@@ -89,11 +93,13 @@ public class SimpleFileDbHashStore implements HashStore {
         SimpleFileDb.DbItem item = mapOfItems.get(key);
         if (item != null) {
             try {
+                hits = incrementLong(hits);
                 return toFanout(item);
             } catch (IOException ex) {
                 log.warn("Exception looking up file {} from simplefiledb: {}", hash, ex);
             }
         }
+        misses = incrementLong(misses);
         return wrapped.getFileFanout(hash);
     }
 
@@ -103,11 +109,13 @@ public class SimpleFileDbHashStore implements HashStore {
         SimpleFileDb.DbItem item = mapOfItems.get(key);
         if (item != null) {
             try {
+                hits = incrementLong(hits);
                 return toFanout(item);
             } catch (IOException ex) {
                 log.warn("Exception looking up chunk {} from simplefiledb: {}", hash, ex);
             }
         }
+        misses = incrementLong(misses);
         return wrapped.getChunkFanout(hash);
     }
 
@@ -128,5 +136,14 @@ public class SimpleFileDbHashStore implements HashStore {
         }
         return wrapped.hasFile(hash);
     }
+
+    public long getHits() {
+        return hits;
+    }
+
+    public long getMisses() {
+        return misses;
+    }
+
 
 }

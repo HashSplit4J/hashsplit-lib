@@ -21,10 +21,21 @@ public class SimpleFileDbBlobStore implements BlobStore {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleFileDbBlobStore.class);
 
+    static long incrementLong(long val) {
+        val = val++;
+        if (val > Long.MAX_VALUE - 100) {
+            val = 0;
+        }
+        return val;
+    }
+
     private final BlobStore wrapped;
     private final List<SimpleFileDb> dbs = new ArrayList<>();
     private final Set<String> dbNames = new HashSet<>();
     private final Map<String, SimpleFileDb.DbItem> mapOfItems = new HashMap<>();
+
+    private long hits;
+    private long misses;
 
     public SimpleFileDbBlobStore(BlobStore wrapped) {
         this.wrapped = wrapped;
@@ -33,7 +44,6 @@ public class SimpleFileDbBlobStore implements BlobStore {
     public BlobStore getWrapped() {
         return wrapped;
     }
-
 
     public String getBlobKey(String hash) {
         return "b-" + hash;
@@ -68,20 +78,31 @@ public class SimpleFileDbBlobStore implements BlobStore {
         SimpleFileDb.DbItem item = mapOfItems.get(key);
         if (item != null) {
             try {
+                hits = incrementLong(hits);
                 return item.data();
             } catch (IOException ex) {
                 log.warn("Exception looking up blob {} from simplefiledb: {}", hash, ex);
             }
         }
+        misses = incrementLong(misses);
         return wrapped.getBlob(hash);
     }
 
     @Override
     public boolean hasBlob(String hash) {
         String key = getBlobKey(hash);
-        if( mapOfItems.containsKey(key) ) {
+        if (mapOfItems.containsKey(key)) {
             return true;
         }
         return wrapped.hasBlob(hash);
     }
+
+    public long getMisses() {
+        return misses;
+    }
+
+    public long getHits() {
+        return hits;
+    }
+
 }
