@@ -22,9 +22,10 @@ public class SimpleFileDbBlobStore implements BlobStore {
     private static final Logger log = LoggerFactory.getLogger(SimpleFileDbBlobStore.class);
 
     static long incrementLong(long val) {
-        val = val++;
         if (val > Long.MAX_VALUE - 100) {
             val = 0;
+        } else {
+            val = val + 1;
         }
         return val;
     }
