@@ -36,4 +36,17 @@ public class FanoutImpl implements Fanout {
     public void setHashes(List<String> hashes) {
         this.hashes = hashes;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Fanout: length=").append(actualContentLength);
+        if( hashes != null ) {
+            sb.append(" hashes: ");
+            for( String s : hashes ) {
+                sb.append(s).append(",");
+            }
+        }
+        return sb.toString();
+    }
+
 }
