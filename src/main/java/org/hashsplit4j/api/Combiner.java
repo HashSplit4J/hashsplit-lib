@@ -38,7 +38,7 @@ public class Combiner {
 
                         byte[] arr = blobStore.getBlob(hash);
                         if (arr == null) {
-                            throw new RuntimeException("Failed to lookup blob: " + hash + ", from chunk fanout " + fanoutHash + ", using blobstore " + blobStore);
+                            throw new RuntimeException("Failed to lookup blob: " + hash + ", from chunk fanout " + fanoutHash + ", using blobstore " + blobStore + ", hashstore=" + hashStore);
                         }
                         out.write(arr);
                         bytesWritten += arr.length;
