@@ -81,10 +81,13 @@ public class SimpleFileDbHashStore implements HashStore {
     private Fanout toFanout(SimpleFileDb.DbItem item) throws IOException {
         byte[] arr = item.data();
         if (arr == null) {
+            log.info("toFanout: item data is null");
             return null;
         }
         String s = new String(arr);
-        return StringFanoutUtils.parseFanout(s);
+        Fanout f = StringFanoutUtils.parseFanout(s);
+        //log.info("toFanout: persisted={} contentlength={} firsthash={}", s, f.getActualContentLength(), f.getHashes().get(0));
+        return f;
     }
 
     @Override
@@ -105,6 +108,7 @@ public class SimpleFileDbHashStore implements HashStore {
 
     @Override
     public Fanout getChunkFanout(String hash) {
+        //log.info("getChunkFanout: hash={}", hash);
         String key = getChunkKey(hash);
         SimpleFileDb.DbItem item = mapOfItems.get(key);
         if (item != null) {
@@ -116,7 +120,13 @@ public class SimpleFileDbHashStore implements HashStore {
             }
         }
         misses = incrementLong(misses);
-        return wrapped.getChunkFanout(hash);
+        Fanout f = wrapped.getChunkFanout(hash);
+        if( f != null ) {
+            //log.info("getChunkFanout: hash={} contentlength={} hashes={}", hash, f.getActualContentLength(), f.getHashes());
+        } else {
+            //log.info("getChunkFanout: not found hash={} from wrapped={}", hash, wrapped);
+        }
+        return f;
     }
 
     @Override
