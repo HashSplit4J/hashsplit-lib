@@ -75,6 +75,7 @@ public class SimpleFileDbBlobStore implements BlobStore {
 
     @Override
     public byte[] getBlob(String hash) {
+        long nanos = System.nanoTime();
         String key = getBlobKey(hash);
         SimpleFileDb.DbItem item = mapOfItems.get(key);
         if (item != null) {
@@ -83,6 +84,9 @@ public class SimpleFileDbBlobStore implements BlobStore {
                 return item.data();
             } catch (IOException ex) {
                 log.warn("Exception looking up blob {} from simplefiledb: {}", hash, ex);
+            } finally {
+                nanos = System.nanoTime() - nanos;
+                log.info("getBlob: duration={} nanos", nanos);
             }
         }
         misses = incrementLong(misses);
