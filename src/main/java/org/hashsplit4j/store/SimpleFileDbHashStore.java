@@ -3,15 +3,9 @@
 package org.hashsplit4j.store;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.hashsplit4j.api.Fanout;
 import org.hashsplit4j.api.HashStore;
-import static org.hashsplit4j.store.SimpleFileDbBlobStore.incrementLong;
 import org.hashsplit4j.utils.StringFanoutUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,17 +14,11 @@ import org.slf4j.LoggerFactory;
  *
  * @author brad
  */
-public class SimpleFileDbHashStore implements HashStore {
+public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements HashStore {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleFileDbHashStore.class);
 
     private final HashStore wrapped;
-    private final List<SimpleFileDb> dbs = new ArrayList<>();
-    private final Set<String> dbNames = new HashSet<>();
-    private final Map<String, SimpleFileDb.DbItem> mapOfItems = new HashMap<>();
-
-    private long hits;
-    private long misses;
 
     public SimpleFileDbHashStore(HashStore wrapped) {
         this.wrapped = wrapped;
@@ -40,32 +28,12 @@ public class SimpleFileDbHashStore implements HashStore {
         return wrapped;
     }
 
-
-
     public String getChunkKey(String hash) {
         return "c-" + hash;
     }
 
     public String getFileKey(String hash) {
         return "f-" + hash;
-    }
-
-    public void addDb(SimpleFileDb db) {
-        dbNames.add(db.getName());
-        dbs.add(db);
-        mapOfItems.putAll(db.getMapOfItems());
-    }
-
-    public boolean containsDb(String name) {
-        return dbNames.contains(name);
-    }
-
-    public int getNumDbs() {
-        return dbs.size();
-    }
-
-    public int size() {
-        return mapOfItems.size();
     }
 
     @Override
@@ -92,41 +60,54 @@ public class SimpleFileDbHashStore implements HashStore {
 
     @Override
     public Fanout getFileFanout(String hash) {
+        long startTime = System.currentTimeMillis();
         String key = getFileKey(hash);
         SimpleFileDb.DbItem item = mapOfItems.get(key);
         if (item != null) {
             try {
-                hits = incrementLong(hits);
                 return toFanout(item);
             } catch (IOException ex) {
                 log.warn("Exception looking up file {} from simplefiledb: {}", hash, ex);
+            } finally {
+                recordHit(startTime);
             }
         }
-        misses = incrementLong(misses);
-        return wrapped.getFileFanout(hash);
+        startTime = System.currentTimeMillis();
+        try {
+            return wrapped.getFileFanout(hash);
+        } finally {
+            recordMiss(startTime);
+        }
     }
 
     @Override
     public Fanout getChunkFanout(String hash) {
         //log.info("getChunkFanout: hash={}", hash);
+        long startTime = System.currentTimeMillis();
         String key = getChunkKey(hash);
         SimpleFileDb.DbItem item = mapOfItems.get(key);
         if (item != null) {
             try {
-                hits = incrementLong(hits);
                 return toFanout(item);
             } catch (IOException ex) {
                 log.warn("Exception looking up chunk {} from simplefiledb: {}", hash, ex);
+            } finally {
+                recordMiss(startTime);
             }
         }
-        misses = incrementLong(misses);
-        Fanout f = wrapped.getChunkFanout(hash);
-        if( f != null ) {
-            //log.info("getChunkFanout: hash={} contentlength={} hashes={}", hash, f.getActualContentLength(), f.getHashes());
-        } else {
-            //log.info("getChunkFanout: not found hash={} from wrapped={}", hash, wrapped);
+        startTime = System.currentTimeMillis();
+        try {
+            Fanout f = wrapped.getChunkFanout(hash);
+            if (f != null) {
+
+                //log.info("getChunkFanout: hash={} contentlength={} hashes={}", hash, f.getActualContentLength(), f.getHashes());
+            } else {
+                //log.info("getChunkFanout: not found hash={} from wrapped={}", hash, wrapped);
+            }
+            return f;
+        } finally {
+            recordMiss(startTime);
         }
-        return f;
     }
 
     @Override
@@ -146,14 +127,5 @@ public class SimpleFileDbHashStore implements HashStore {
         }
         return wrapped.hasFile(hash);
     }
-
-    public long getHits() {
-        return hits;
-    }
-
-    public long getMisses() {
-        return misses;
-    }
-
 
 }

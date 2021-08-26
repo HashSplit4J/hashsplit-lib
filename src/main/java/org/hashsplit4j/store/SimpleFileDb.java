@@ -42,6 +42,15 @@ public class SimpleFileDb {
         this.valuesFile = valuesFile;
     }
 
+
+    public long getKeysFileSize() {
+        return keysFile.length();
+    }
+
+    public long getValuesFileSize() {
+        return valuesFile.length();
+    }
+
     public String getName() {
         return name;
     }
