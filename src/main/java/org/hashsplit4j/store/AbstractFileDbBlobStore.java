@@ -36,6 +36,7 @@ public class AbstractFileDbBlobStore {
     private long adds;
     private long hitDurationMillis;
     private long missDurationMillis;
+    private SimpleFileDb addingToDb;
 
     public Map<String, Object> getCacheStats() {
         Map<String, Object> map = new HashMap<>();
@@ -63,6 +64,21 @@ public class AbstractFileDbBlobStore {
         return maxFileSize;
     }
 
+    public Long getValuesFileSize() {
+        if( addingToDb != null ) {
+            return addingToDb.getValuesFileSize();
+        }
+        return null;
+    }
+
+    public String getValuesFilePath() {
+        return addingToDb.getValuesFilePath();
+    }
+
+    public String getKeysFilePath() {
+        return addingToDb.getKeysFilePath();
+    }
+
     public void setMaxFileSize(long maxFileSize) {
         this.maxFileSize = maxFileSize;
     }
@@ -73,6 +89,7 @@ public class AbstractFileDbBlobStore {
         mapOfItems.putAll(db.getMapOfItems());
         if (enableAdd) {
             if (queueRunnable == null) {
+                addingToDb = db;
                 queueRunnable = new SimpleFileDbQueueRunnable(db, 1000, maxFileSize);
                 exService = Executors.newSingleThreadExecutor();
                 exService.submit(this.queueRunnable);

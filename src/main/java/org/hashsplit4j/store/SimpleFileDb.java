@@ -42,6 +42,21 @@ public class SimpleFileDb {
         this.valuesFile = valuesFile;
     }
 
+    public String getKeysFilePath() {
+        try {
+            return keysFile.getCanonicalPath();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public String getValuesFilePath() {
+        try {
+            return keysFile.getCanonicalPath();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 
     public long getKeysFileSize() {
         return keysFile.length();

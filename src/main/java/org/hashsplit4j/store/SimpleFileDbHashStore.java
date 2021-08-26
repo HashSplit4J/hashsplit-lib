@@ -52,6 +52,7 @@ public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements Ha
             log.info("toFanout: item data is null");
             return null;
         }
+
         String s = new String(arr);
         Fanout f = StringFanoutUtils.parseFanout(s);
         //log.info("toFanout: persisted={} contentlength={} firsthash={}", s, f.getActualContentLength(), f.getHashes().get(0));
@@ -74,7 +75,14 @@ public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements Ha
         }
         startTime = System.currentTimeMillis();
         try {
-            return wrapped.getFileFanout(hash);
+            Fanout f = wrapped.getFileFanout(hash);
+            if (f != null) {
+                if (enableAdd) {
+                    String s = StringFanoutUtils.formatFanout(f.getHashes(), f.getActualContentLength());
+                    saveToDb(key, s.getBytes());
+                }
+            }
+            return f;
         } finally {
             recordMiss(startTime);
         }
@@ -99,7 +107,10 @@ public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements Ha
         try {
             Fanout f = wrapped.getChunkFanout(hash);
             if (f != null) {
-
+                if (enableAdd) {
+                    String s = StringFanoutUtils.formatFanout(f.getHashes(), f.getActualContentLength());
+                    saveToDb(key, s.getBytes());
+                }
                 //log.info("getChunkFanout: hash={} contentlength={} hashes={}", hash, f.getActualContentLength(), f.getHashes());
             } else {
                 //log.info("getChunkFanout: not found hash={} from wrapped={}", hash, wrapped);
