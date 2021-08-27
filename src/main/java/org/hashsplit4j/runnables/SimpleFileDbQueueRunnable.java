@@ -55,7 +55,7 @@ public class SimpleFileDbQueueRunnable implements Runnable {
      */
     public boolean add(String hash, byte[] bytes) {
         if (errors > MAX_ERRORS) {
-            log.warn("addBlob: Too many errors, will not try to save to MCS");
+            log.warn("addBlob: Too many errors {}, will not try to save to SimpleFileDb", errors);
             return false;
         } else {
             if (db.getValuesFileSize() < maxFileSize) {
@@ -76,7 +76,9 @@ public class SimpleFileDbQueueRunnable implements Runnable {
             try {
                 blob = queue.take();
                 if (blob != null) {
-                    db.put(blob.getHash(), blob.getBytes());
+                    if (!db.contains(blob.getHash())) {
+                        db.put(blob.getHash(), blob.getBytes());
+                    }
                 }
             } catch (Exception ex) {
                 errors++;
@@ -84,7 +86,7 @@ public class SimpleFileDbQueueRunnable implements Runnable {
                     log.error("An InterruptedException was thrown with queue {}", queue, ex);
                     throw new RuntimeException(ex);
                 } else {
-                    log.error("Exception inserting blob into DB: Msg: {}", ex.getMessage(), ex);
+                    log.error("Exception inserting blob into DB: Msg: {}, total errors: " + errors, ex.getMessage(), ex);
                 }
             }
         }
