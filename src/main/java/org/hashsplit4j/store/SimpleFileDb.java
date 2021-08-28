@@ -24,15 +24,52 @@ public class SimpleFileDb {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleFileDb.class);
 
+    private final String name;
     private final File keysFile;
     private final File valuesFile;
 
     private final Map<String, DbItem> mapOfItems = new HashMap<>();
 
-    public SimpleFileDb(File keysFile, File valuesFile) {
+    /**
+     *
+     * @param name - just an identifier for this instance
+     * @param keysFile
+     * @param valuesFile
+     */
+    public SimpleFileDb(String name, File keysFile, File valuesFile) {
+        this.name = name;
         this.keysFile = keysFile;
         this.valuesFile = valuesFile;
     }
+
+    public String getKeysFilePath() {
+        try {
+            return keysFile.getCanonicalPath();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public String getValuesFilePath() {
+        try {
+            return keysFile.getCanonicalPath();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public long getKeysFileSize() {
+        return keysFile.length();
+    }
+
+    public long getValuesFileSize() {
+        return valuesFile.length();
+    }
+
+    public String getName() {
+        return name;
+    }
+
 
     public void init() throws FileNotFoundException, IOException {
         if (keysFile.exists()) {
@@ -55,6 +92,11 @@ public class SimpleFileDb {
     Map<String, DbItem> getMapOfItems() {
         return mapOfItems;
     }
+
+    public boolean contains(String hash) {
+        return mapOfItems.containsKey(hash);
+    }
+
 
     public DbItem put(String key, byte[] val) throws FileNotFoundException, IOException {
         if (mapOfItems.containsKey(key)) {
@@ -96,7 +138,7 @@ public class SimpleFileDb {
     }
 
     public byte[] get(DbItem item) throws FileNotFoundException, IOException {
-        RandomAccessFile raf = new RandomAccessFile(keysFile, "r");
+        RandomAccessFile raf = new RandomAccessFile(valuesFile, "r");
         try (FileChannel chan = raf.getChannel()) {
             int size = (int) (item.finish - item.start);
             ByteBuffer bb = ByteBuffer.allocate(size);

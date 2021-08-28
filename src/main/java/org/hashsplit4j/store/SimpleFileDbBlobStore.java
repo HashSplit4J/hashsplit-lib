@@ -3,49 +3,71 @@
 package org.hashsplit4j.store;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.hashsplit4j.api.BlobStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brad
  */
-public class SimpleFileDbBlobStore implements BlobStore{
-    private final List<SimpleFileDb> dbs = new ArrayList<>();
-    private final Map<String, SimpleFileDb.DbItem> mapOfItems = new HashMap<>();
+public class SimpleFileDbBlobStore extends AbstractFileDbBlobStore implements BlobStore {
 
-    public void addDb(SimpleFileDb db) {
-        mapOfItems.putAll(db.getMapOfItems());
+    private static final Logger log = LoggerFactory.getLogger(SimpleFileDbBlobStore.class);
+
+    private final BlobStore wrapped;
+
+
+
+    public SimpleFileDbBlobStore(BlobStore wrapped) {
+        this.wrapped = wrapped;
     }
 
-    public int getNumDbs() {
-        return dbs.size();
+    public BlobStore getWrapped() {
+        return wrapped;
     }
 
-    public int size() {
-        return mapOfItems.size();
+    public String getBlobKey(String hash) {
+        return "b-" + hash;
     }
 
     @Override
     public void setBlob(String hash, byte[] bytes) {
-        throw new UnsupportedOperationException("Not supported. Please add directly to an underlying SimpleFileDb");
+        wrapped.setBlob(hash, bytes);
     }
 
     @Override
     public byte[] getBlob(String hash) {
-        SimpleFileDb.DbItem item = mapOfItems.get(hash);
-        try {
-            return item.data();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        long startTime = System.currentTimeMillis();
+        String key = getBlobKey(hash);
+        SimpleFileDb.DbItem item = mapOfItems.get(key);
+        if (item != null) {
+            try {
+                return item.data();
+            } catch (IOException ex) {
+                log.warn("Exception looking up blob {} from simplefiledb: {}", hash, ex);
+            } finally {
+                recordHit(startTime);
+            }
         }
+
+        startTime = System.currentTimeMillis();
+        byte[] bytes = wrapped.getBlob(hash);
+        recordMiss(startTime);
+        if (enableAdd && bytes != null) {
+            // save to the simple DB unless exceeded size
+            saveToDb(hash, bytes);
+        }
+        return bytes;
+
     }
 
     @Override
     public boolean hasBlob(String hash) {
-        return mapOfItems.containsKey(hash);
+        String key = getBlobKey(hash);
+        if (mapOfItems.containsKey(key)) {
+            return true;
+        }
+        return wrapped.hasBlob(hash);
     }
 }
