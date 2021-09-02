@@ -2,6 +2,7 @@
  */
 package org.hashsplit4j.store;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,7 +25,6 @@ public class AbstractFileDbBlobStore {
 
     protected final List<SimpleFileDb> dbs = new ArrayList<>();
     protected final Set<String> dbNames = new HashSet<>();
-    protected final Map<String, SimpleFileDb.DbItem> mapOfItems = new HashMap<>();
 
     protected boolean enableAdd;
     protected SimpleFileDbQueueRunnable queueRunnable;  // if adds are enabled
@@ -34,9 +34,35 @@ public class AbstractFileDbBlobStore {
     private long hits;
     private long misses;
     private long adds;
+    private long notFound;
     private long hitDurationMillis;
     private long missDurationMillis;
+    private long notFoundDurationMillis;
     private SimpleFileDb addingToDb;
+
+    protected byte[] _get(String key) {
+        for (SimpleFileDb db : dbs) {
+            byte[] item;
+            try {
+                item = db.get(key);
+                if (item != null) {
+                    return item;
+                }
+            } catch (IOException ex) {
+                log.warn("Exception looking for " + key + " in db" + db.getName() + " - {}", ex);
+            }
+        }
+        return null;
+    }
+
+    protected boolean _hashKey(String key) {
+        for (SimpleFileDb db : dbs) {
+            if( db.contains(key) ) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public Map<String, Object> getCacheStats() {
         Map<String, Object> map = new HashMap<>();
@@ -65,7 +91,7 @@ public class AbstractFileDbBlobStore {
     }
 
     public Long getValuesFileSize() {
-        if( addingToDb != null ) {
+        if (addingToDb != null) {
             return addingToDb.getValuesFileSize();
         }
         return null;
@@ -86,7 +112,6 @@ public class AbstractFileDbBlobStore {
     public void addDb(SimpleFileDb db) {
         dbNames.add(db.getName());
         dbs.add(db);
-        mapOfItems.putAll(db.getMapOfItems());
         if (enableAdd) {
             if (queueRunnable == null) {
                 addingToDb = db;
@@ -97,10 +122,10 @@ public class AbstractFileDbBlobStore {
         }
     }
 
-    protected void saveToDb(String hash, byte[] bytes) {
+    protected void saveToDb(String key, byte[] bytes) {
         if (queueRunnable != null) {
             adds = incrementLong(adds, 1);
-            queueRunnable.add(hash, bytes);
+            queueRunnable.add(key, bytes);
         }
     }
 
@@ -113,7 +138,11 @@ public class AbstractFileDbBlobStore {
     }
 
     public int size() {
-        return mapOfItems.size();
+        int i = 0;
+        for (SimpleFileDb db : dbs) {
+            i += db.size();
+        }
+        return i;
     }
 
     public long getMisses() {
@@ -131,9 +160,15 @@ public class AbstractFileDbBlobStore {
     }
 
     protected void recordMiss(long startTime) {
-        long durationMillis = System.currentTimeMillis()- startTime;
+        long durationMillis = System.currentTimeMillis() - startTime;
         misses = incrementLong(misses, 1);
         missDurationMillis = incrementLong(missDurationMillis, durationMillis);
+    }
+
+    protected void recordNotFound(long startTime) {
+        long durationMillis = System.currentTimeMillis() - startTime;
+        notFound = incrementLong(notFound, 1);
+        notFoundDurationMillis = incrementLong(notFoundDurationMillis, durationMillis);
     }
 
     protected long incrementLong(long val, long amount) {
