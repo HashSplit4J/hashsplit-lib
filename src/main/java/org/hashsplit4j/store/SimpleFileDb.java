@@ -72,13 +72,15 @@ public class SimpleFileDb {
 
 
     public void init() throws FileNotFoundException, IOException {
-        try (FileInputStream fin = new FileInputStream(keysFile)) {
-            InputStreamReader r1 = new InputStreamReader(fin);
-            BufferedReader reader = new BufferedReader(r1);
-            String line = reader.readLine();
-            while (line != null) {
-                parseAndAdd(line);
-                line = reader.readLine();
+        if (keysFile.exists()) {
+            try (FileInputStream fin = new FileInputStream(keysFile)) {
+                InputStreamReader r1 = new InputStreamReader(fin);
+                BufferedReader reader = new BufferedReader(r1);
+                String line = reader.readLine();
+                while (line != null) {
+                    parseAndAdd(line);
+                    line = reader.readLine();
+                }
             }
         }
     }
