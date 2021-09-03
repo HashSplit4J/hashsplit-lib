@@ -57,7 +57,7 @@ public class AbstractFileDbBlobStore {
 
     protected boolean _hashKey(String key) {
         for (SimpleFileDb db : dbs) {
-            if( db.contains(key) ) {
+            if (db.contains(key)) {
                 return true;
             }
         }
@@ -98,11 +98,17 @@ public class AbstractFileDbBlobStore {
     }
 
     public String getValuesFilePath() {
-        return addingToDb.getValuesFilePath();
+        if (addingToDb != null) {
+            return addingToDb.getValuesFilePath();
+        }
+        return null;
     }
 
     public String getKeysFilePath() {
-        return addingToDb.getKeysFilePath();
+        if (addingToDb != null) {
+            return addingToDb.getKeysFilePath();
+        }
+        return null;
     }
 
     public void setMaxFileSize(long maxFileSize) {
