@@ -2,7 +2,6 @@
  */
 package org.hashsplit4j.store;
 
-import java.io.IOException;
 import org.hashsplit4j.api.BlobStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +15,6 @@ public class SimpleFileDbBlobStore extends AbstractFileDbBlobStore implements Bl
     private static final Logger log = LoggerFactory.getLogger(SimpleFileDbBlobStore.class);
 
     private final BlobStore wrapped;
-
-
 
     public SimpleFileDbBlobStore(BlobStore wrapped) {
         this.wrapped = wrapped;
@@ -40,23 +37,22 @@ public class SimpleFileDbBlobStore extends AbstractFileDbBlobStore implements Bl
     public byte[] getBlob(String hash) {
         long startTime = System.currentTimeMillis();
         String key = getBlobKey(hash);
-        SimpleFileDb.DbItem item = mapOfItems.get(key);
-        if (item != null) {
-            try {
-                return item.data();
-            } catch (IOException ex) {
-                log.warn("Exception looking up blob {} from simplefiledb: {}", hash, ex);
-            } finally {
-                recordHit(startTime);
-            }
+        byte[] data = _get(key);
+        if (data != null) {
+            recordHit(startTime);
+            return data;
         }
 
         startTime = System.currentTimeMillis();
         byte[] bytes = wrapped.getBlob(hash);
-        recordMiss(startTime);
+        if (bytes != null) {
+            recordMiss(startTime);
+        } else {
+            recordNotFound(startTime);
+        }
         if (enableAdd && bytes != null) {
             // save to the simple DB unless exceeded size
-            saveToDb(hash, bytes);
+            saveToDb(key, bytes);
         }
         return bytes;
 
@@ -65,7 +61,7 @@ public class SimpleFileDbBlobStore extends AbstractFileDbBlobStore implements Bl
     @Override
     public boolean hasBlob(String hash) {
         String key = getBlobKey(hash);
-        if (mapOfItems.containsKey(key)) {
+        if( _hashKey(key) ) {
             return true;
         }
         return wrapped.hasBlob(hash);

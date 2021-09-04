@@ -2,7 +2,6 @@
  */
 package org.hashsplit4j.store;
 
-import java.io.IOException;
 import java.util.List;
 import org.hashsplit4j.api.Fanout;
 import org.hashsplit4j.api.HashStore;
@@ -46,8 +45,7 @@ public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements Ha
         wrapped.setFileFanout(hash, fanoutHashes, actualContentLength);
     }
 
-    private Fanout toFanout(SimpleFileDb.DbItem item) throws IOException {
-        byte[] arr = item.data();
+    private Fanout toFanout(byte[] arr) {
         if (arr == null) {
             log.info("toFanout: item data is null");
             return null;
@@ -63,15 +61,10 @@ public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements Ha
     public Fanout getFileFanout(String hash) {
         long startTime = System.currentTimeMillis();
         String key = getFileKey(hash);
-        SimpleFileDb.DbItem item = mapOfItems.get(key);
-        if (item != null) {
-            try {
-                return toFanout(item);
-            } catch (IOException ex) {
-                log.warn("Exception looking up file {} from simplefiledb: {}", hash, ex);
-            } finally {
-                recordHit(startTime);
-            }
+        byte[] data = _get(key);
+        if (data != null) {
+            recordHit(startTime);
+            return toFanout(data);
         }
         startTime = System.currentTimeMillis();
         try {
@@ -93,15 +86,10 @@ public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements Ha
         //log.info("getChunkFanout: hash={}", hash);
         long startTime = System.currentTimeMillis();
         String key = getChunkKey(hash);
-        SimpleFileDb.DbItem item = mapOfItems.get(key);
-        if (item != null) {
-            try {
-                return toFanout(item);
-            } catch (IOException ex) {
-                log.warn("Exception looking up chunk {} from simplefiledb: {}", hash, ex);
-            } finally {
-                recordMiss(startTime);
-            }
+        byte[] data = _get(key);
+        if (data != null) {
+            recordHit(startTime);
+            return toFanout(data);
         }
         startTime = System.currentTimeMillis();
         try {
@@ -124,7 +112,7 @@ public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements Ha
     @Override
     public boolean hasChunk(String hash) {
         String key = getChunkKey(hash);
-        if (mapOfItems.containsKey(key)) {
+        if (_hashKey(key) ) {
             return true;
         }
         return wrapped.hasChunk(hash);
@@ -133,7 +121,7 @@ public class SimpleFileDbHashStore extends AbstractFileDbBlobStore implements Ha
     @Override
     public boolean hasFile(String hash) {
         String key = getFileKey(hash);
-        if (mapOfItems.containsKey(key)) {
+        if (_hashKey(key) ) {
             return true;
         }
         return wrapped.hasFile(hash);

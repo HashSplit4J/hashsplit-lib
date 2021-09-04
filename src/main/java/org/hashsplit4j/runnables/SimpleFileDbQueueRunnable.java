@@ -49,21 +49,21 @@ public class SimpleFileDbQueueRunnable implements Runnable {
      * false if for any reason the blob is not enqueued (eg no space is
      * currently available, or already enqueued)
      *
-     * @param hash
+     * @param key
      * @param bytes
      * @return true upon success and false if no space is currently available
      */
-    public boolean add(String hash, byte[] bytes) {
+    public boolean add(String key, byte[] bytes) {
         if (errors > MAX_ERRORS) {
             log.warn("addBlob: Too many errors {}, will not try to save to SimpleFileDb", errors);
             return false;
         } else {
             if (db.getValuesFileSize() < maxFileSize) {
-                log.info("Enqueuing blob={} size={}", hash, bytes.length);
-                BlobImpl blob = new BlobImpl(hash, bytes);
+                log.info("Enqueuing item={} size={}", key, bytes.length);
+                BlobImpl blob = new BlobImpl(key, bytes);
                 return this.queue.offer(blob);
             } else {
-                log.info("Cache file has exceeded max size, will not add to cache {}", hash);
+                log.info("Cache file has exceeded max size, will not add to cache {}", key);
                 return false;
             }
         }
