@@ -70,8 +70,7 @@ public class SimpleFileDb {
         return name;
     }
 
-
-    public void init() throws FileNotFoundException, IOException {
+    public synchronized void init() throws FileNotFoundException, IOException {
         if (keysFile.exists()) {
             try (FileInputStream fin = new FileInputStream(keysFile)) {
                 InputStreamReader r1 = new InputStreamReader(fin);
@@ -97,8 +96,7 @@ public class SimpleFileDb {
         return mapOfItems.containsKey(hash);
     }
 
-
-    public DbItem put(String key, byte[] val) throws FileNotFoundException, IOException {
+    public synchronized DbItem put(String key, byte[] val) throws FileNotFoundException, IOException {
         if (mapOfItems.containsKey(key)) {
             throw new RuntimeException("Key " + key + " is already present");
         }
@@ -112,9 +110,13 @@ public class SimpleFileDb {
             chan.write(bb);
             finishPos = chan.position();
         }
+        long length = finishPos - startPos;
+        if (length != val.length) {
+            throw new RuntimeException("Inserting blob into simplefiledb failed, lengths differ. Should be " + val.length + " but is " + length + ", for key=" + key);
+        }
         DbItem dbItem = new DbItem(startPos, finishPos);
 
-        log.info("save: start={} finish={} key={}", startPos, finishPos, key);
+        log.info("put: start={} finish={} key={}", startPos, finishPos, key);
         try (FileOutputStream fout = new FileOutputStream(keysFile, true)) { //open in append mode
             try (FileChannel chan = fout.getChannel()) {
                 String line = key + "," + startPos + "," + finishPos + "\n"; // use text for ease of troubleshooting
