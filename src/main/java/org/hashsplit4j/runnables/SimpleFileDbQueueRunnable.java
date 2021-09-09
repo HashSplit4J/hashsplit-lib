@@ -77,6 +77,7 @@ public class SimpleFileDbQueueRunnable implements Runnable {
                 blob = queue.take();
                 if (blob != null) {
                     if (!db.contains(blob.getHash())) {
+                        log.info("run: saving blob to DB, key={} bytes={}", blob.getHash(), blob.getBytes().length);
                         db.put(blob.getHash(), blob.getBytes());
                     }
                 }
