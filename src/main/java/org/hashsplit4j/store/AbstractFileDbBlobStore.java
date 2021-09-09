@@ -46,6 +46,7 @@ public class AbstractFileDbBlobStore {
             try {
                 item = db.get(key);
                 if (item != null) {
+                    log.info("_get: key={} data size={}", key, item.length);
                     return item;
                 }
             } catch (IOException ex) {
@@ -115,7 +116,7 @@ public class AbstractFileDbBlobStore {
         this.maxFileSize = maxFileSize;
     }
 
-    public void addDb(SimpleFileDb db) {
+    public synchronized void addDb(SimpleFileDb db) {
         dbNames.add(db.getName());
         dbs.add(db);
         if (enableAdd) {
