@@ -4,7 +4,6 @@ package org.hashsplit4j.store;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author brad
  */
-public class AbstractFileDbBlobStore {
+public class AbstractFileDbBlobStore extends AbstractBlobStore {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractFileDbBlobStore.class);
 
@@ -31,13 +30,7 @@ public class AbstractFileDbBlobStore {
     protected long maxFileSize = 5 * 1000 * 1000000; // 5GB default
     protected ExecutorService exService;
 
-    private long hits;
-    private long misses;
     private long adds;
-    private long notFound;
-    private long hitDurationMillis;
-    private long missDurationMillis;
-    private long notFoundDurationMillis;
     private SimpleFileDb addingToDb;
 
     protected byte[] _get(String key) {
@@ -65,16 +58,9 @@ public class AbstractFileDbBlobStore {
         return false;
     }
 
+    @Override
     public Map<String, Object> getCacheStats() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("hits", hits);
-        if (hits > 0) {
-            map.put("hitAvgMs", hitDurationMillis / hits);
-        }
-        map.put("misses", misses);
-        if (misses > 0) {
-            map.put("missAvgMs", missDurationMillis / misses);
-        }
+        Map<String, Object> map = super.getCacheStats();
         map.put("adds", adds);
         return map;
     }
@@ -151,40 +137,4 @@ public class AbstractFileDbBlobStore {
         }
         return i;
     }
-
-    public long getMisses() {
-        return misses;
-    }
-
-    public long getHits() {
-        return hits;
-    }
-
-    protected void recordHit(long startTime) {
-        long durationMillis = System.currentTimeMillis() - startTime;
-        hits = incrementLong(hits, 1);
-        hitDurationMillis = incrementLong(hitDurationMillis, durationMillis);
-    }
-
-    protected void recordMiss(long startTime) {
-        long durationMillis = System.currentTimeMillis() - startTime;
-        misses = incrementLong(misses, 1);
-        missDurationMillis = incrementLong(missDurationMillis, durationMillis);
-    }
-
-    protected void recordNotFound(long startTime) {
-        long durationMillis = System.currentTimeMillis() - startTime;
-        notFound = incrementLong(notFound, 1);
-        notFoundDurationMillis = incrementLong(notFoundDurationMillis, durationMillis);
-    }
-
-    protected long incrementLong(long val, long amount) {
-        if (val > Long.MAX_VALUE - 10000) {
-            val = 0;
-        } else {
-            val = val + amount;
-        }
-        return val;
-    }
-
 }

@@ -14,6 +14,7 @@
  */
 package org.hashsplit4j.store;
 
+import java.util.Map;
 import org.apache.jcs.JCS;
 import org.apache.jcs.access.CacheAccess;
 import org.apache.jcs.access.exception.CacheException;
@@ -28,19 +29,19 @@ import org.slf4j.LoggerFactory;
  *
  * @author brad
  */
-public class JCSCachingBlobStore implements BlobStore {
+public class JCSCachingBlobStore extends AbstractBlobStore implements BlobStore {
 
     private static final Logger log = LoggerFactory.getLogger(JCSCachingBlobStore.class);
 
     private final CacheAccess cache;
 
     private final BlobStore blobStore;
+    private final Integer capacity;
 
-    private long hits;
-    private long misses;
 
     public JCSCachingBlobStore(BlobStore blobStore, Integer capacity) throws CacheException {
         this.blobStore = blobStore;
+        this.capacity = capacity;
         cache = JCS.getInstance("blobs");
         ICompositeCacheAttributes cacheCca = cache.getCacheAttributes();
         if (capacity != null) {
@@ -48,6 +49,13 @@ public class JCSCachingBlobStore implements BlobStore {
         }
         cacheCca.setUseMemoryShrinker(true);
         this.cache.setCacheAttributes(cacheCca);
+    }
+
+    @Override
+    public Map<String, Object> getCacheStats() {
+        Map<String, Object> map = super.getCacheStats();
+        map.put("capacity", capacity);
+        return map;
     }
 
     @Override
@@ -68,12 +76,12 @@ public class JCSCachingBlobStore implements BlobStore {
 
     @Override
     public byte[] getBlob(String hash) {
+        long startTime = System.currentTimeMillis();
         byte[] arr = (byte[]) cache.get(hash);
         if (arr == null) {
             arr = blobStore.getBlob(hash);
             if (arr != null) {
-                log.info("JCSCachingBlobStore cache miss: hits={} misses={}", hits, misses);
-                misses++;
+                //log.info("JCSCachingBlobStore cache miss: hits={} misses={}", hits, misses);
                 try {
                     cache.putSafe(hash, arr);
                 } catch(ObjectExistsException e) {
@@ -81,9 +89,12 @@ public class JCSCachingBlobStore implements BlobStore {
                 } catch (CacheException ex) {
                     log.warn("Failed to add blob to cache: " + hash, ex);
                 }
+                recordMiss(startTime);
+            } else {
+                recordNotFound(startTime);
             }
         } else {
-            hits++;
+            recordHit(startTime);
         }
         return arr;
     }
@@ -93,4 +104,6 @@ public class JCSCachingBlobStore implements BlobStore {
         byte[] arr = getBlob(hash);
         return arr != null;
     }
+
+
 }
