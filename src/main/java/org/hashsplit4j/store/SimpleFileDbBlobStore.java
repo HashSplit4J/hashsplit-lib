@@ -35,6 +35,7 @@ public class SimpleFileDbBlobStore extends AbstractFileDbBlobStore implements Bl
 
     @Override
     public byte[] getBlob(String hash) {
+        log.info("getBlob: {}", hash);
         long startTime = System.currentTimeMillis();
         String key = getBlobKey(hash);
         byte[] data = _get(key);
